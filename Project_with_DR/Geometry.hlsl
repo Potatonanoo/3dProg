@@ -20,10 +20,9 @@ struct GS_OUT
 	float4 normal	: NORMAL;
 };
 
-[maxvertexcount(6)] // Max number of vertices
+[maxvertexcount(6)]
 void GS_main( triangle GS_IN IN[3], inout TriangleStream< GS_OUT > output )
 {
-	//Primitive center
 	for (int i = 0; i < 3; i++)
 	{
 		GS_OUT element;

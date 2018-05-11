@@ -1,5 +1,5 @@
 #include "Application.h"
-#include "bth_image.h"
+//#include "bth_image.h"
 
 Application::Application(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int nCmdShow, HWND wndHandle, int width, int height)
 {
@@ -7,20 +7,16 @@ Application::Application(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lp
 	g_Device = nullptr;
 	g_DeviceContext = nullptr;
 	g_RenderTargetView = nullptr;
-	g_VertexBuffer = nullptr;
+	//g_VertexBuffer = nullptr;
 	g_VertexLayout = nullptr;
 	g_DeferredVertexLayout = nullptr;
 	g_VertexShader = nullptr;
-	g_DefVertexShader = nullptr;
 	g_PixelShader = nullptr;
-	g_DefPixelShader = nullptr;
 	g_GeometryShader = nullptr;
-	g_PixelShaderTexture = nullptr;
-	g_PixelShaderEverything = nullptr;
 	g_DepthStencilView = nullptr;
 	g_DepthStencilBuffer = nullptr;
-	g_ShaderResourceView = nullptr;
-	g_SamplerState = nullptr;
+	//g_ShaderResourceView = nullptr;
+	//g_SamplerState = nullptr;
 
 	this->width = width;
 	this->height = height;
@@ -58,11 +54,19 @@ bool Application::Initialise()
 	if (FAILED(hr))
 		result = false;
 
+	obj = new Object*[NUM_OBJ];
+
+	for (int i = 0; i < NUM_OBJ; i++)
+	{
+		obj[i] = nullptr;
+		obj[i] = new Object(g_Device);
+	}
+
 	result = CreateDepthBuffer();
 	SetViewport();
 	result = CreateShaders();
-	CreateVertexBuffer();
-	CreateTexture();
+	CreateQuadBuffer();
+	//CreateTexture();
 	result = CreateConstantBuffer();
 	result = CreateGBuffer();
 
@@ -97,27 +101,35 @@ void Application::Render()
 	g_DeviceContext->IASetInputLayout(g_DeferredVertexLayout);
 	g_DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-	D3D11_MAPPED_SUBRESOURCE dataPtr;
-	g_DeviceContext->Map(g_ConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &dataPtr);
-	memcpy(dataPtr.pData, &ObjData, sizeof(ConstantBuffer));
-	g_DeviceContext->Unmap(g_ConstantBuffer, 0);
-
 	UINT vertexSize = sizeof(float) * 8; // x, y, z, u, v, nx, ny, nz
 	UINT offset = 0;
-	g_DeviceContext->IASetVertexBuffers(0, 1, &g_VertexBuffer, &vertexSize, &offset);
 
-	g_DeviceContext->VSSetShader(g_DeferredVertexShader, nullptr, 0);
-	g_DeviceContext->GSSetShader(g_GeometryShader, nullptr, 0);
-	g_DeviceContext->PSSetShader(g_DeferredPixelShader, nullptr, 0);
-	g_DeviceContext->HSSetShader(nullptr, nullptr, 0);
-	g_DeviceContext->DSSetShader(nullptr, nullptr, 0);
+	for (int i = 0; i < NUM_OBJ; i++)
+	{
+		g_VertexBuffer = obj[NUM_OBJ]->getVertexBuffer();
+		g_ShaderResourceView = obj[NUM_OBJ]->getShaderResourceView();
+		g_SamplerState = obj[NUM_OBJ]->getSamplerState();
 
-	g_DeviceContext->GSSetConstantBuffers(0, 1, &g_ConstantBuffer);
+		D3D11_MAPPED_SUBRESOURCE dataPtr;
+		g_DeviceContext->Map(g_ConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &dataPtr);
+		memcpy(dataPtr.pData, &ObjData, sizeof(ConstantBuffer));
+		g_DeviceContext->Unmap(g_ConstantBuffer, 0);
 
-	g_DeviceContext->PSSetShaderResources(0, 1, &g_ShaderResourceView);
-	g_DeviceContext->PSSetSamplers(0, 1, &g_SamplerState);
+		g_DeviceContext->IASetVertexBuffers(0, 1, &g_VertexBuffer, &vertexSize, &offset);
 
-	g_DeviceContext->Draw(6, 0);
+		g_DeviceContext->VSSetShader(g_DeferredVertexShader, nullptr, 0);
+		g_DeviceContext->GSSetShader(g_GeometryShader, nullptr, 0);
+		g_DeviceContext->PSSetShader(g_DeferredPixelShader, nullptr, 0);
+		g_DeviceContext->HSSetShader(nullptr, nullptr, 0);
+		g_DeviceContext->DSSetShader(nullptr, nullptr, 0);
+
+		g_DeviceContext->GSSetConstantBuffers(0, 1, &g_ConstantBuffer);
+
+		g_DeviceContext->PSSetShaderResources(0, 1, &g_ShaderResourceView);
+		g_DeviceContext->PSSetSamplers(0, 1, &g_SamplerState);
+
+		g_DeviceContext->Draw(6, 0);
+	}
 
 	// Screen Quad
 	g_DeviceContext->OMSetRenderTargets(1, &g_RenderTargetView, NULL);
@@ -377,86 +389,8 @@ bool Application::CreateGBuffer()
 	return true;
 }
 
-/* [Skapar våran texture med BTH_IMAGE.H] */
-void Application::CreateTexture()
-{
-	ID3D11Texture2D* texture;
-
-	D3D11_TEXTURE2D_DESC texDesc = { 0 };
-	texDesc.Width = BTH_IMAGE_WIDTH;
-	texDesc.Height = BTH_IMAGE_HEIGHT;
-	texDesc.MipLevels = 1;
-	texDesc.ArraySize = 1;
-	texDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-	texDesc.SampleDesc.Count = 1;
-	texDesc.Usage = D3D11_USAGE_DEFAULT;
-	texDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-	texDesc.CPUAccessFlags = 0;
-	texDesc.MiscFlags = 0;
-
-	// Data from the image
-	D3D11_SUBRESOURCE_DATA subData;
-	subData.pSysMem = &BTH_IMAGE_DATA;
-	subData.SysMemPitch = sizeof(char) * 4 * BTH_IMAGE_WIDTH;
-	subData.SysMemSlicePitch = sizeof(char) * 4 * BTH_IMAGE_WIDTH * BTH_IMAGE_HEIGHT;
-
-	g_Device->CreateTexture2D(&texDesc, &subData, &texture);
-	g_Device->CreateShaderResourceView(texture, NULL, &g_ShaderResourceView);
-
-	// Texture sampling
-	D3D11_SAMPLER_DESC sampDesc = {};
-	sampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
-	sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
-	sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
-	sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
-	sampDesc.MipLODBias = 0;
-	sampDesc.MaxAnisotropy = 1;
-	sampDesc.MinLOD = 0;
-	sampDesc.MaxLOD = D3D11_FLOAT32_MAX;
-	sampDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
-
-	g_Device->CreateSamplerState(&sampDesc, &g_SamplerState);
-}
-
-void Application::CreateVertexBuffer()
-{
-	VertexData triangleVertices[6] =
-	{
-		-0.5f, 0.5f, 0.0f,	// v0
-		0.f, 0.f,			// q0
-		0.f, 0.f, -1.f,
-		
-		0.5f, 0.5f, 0.0f,	// v1
-		1.f, 0.f,			// q1
-		0.f, 0.f, -1.f,
-		
-		-0.5f, -0.5f, 0.0f,	// v2
-		0.f, 1.f,			// q2
-		0.f, 0.f, -1.f,
-		
-		0.5f, 0.5f, 0.0f,	// v1
-		1.f, 0.f,			// q1
-		0.f, 0.f, -1.f,
-		
-		0.5f, -0.5f, 0.0f,	// v3
-		1.f, 1.f,			// q3
-		0.f, 0.f, -1.f,
-		
-		-0.5f, -0.5f, 0.0f,	// v4
-		0.f, 1.f,			// q4
-		0.f, 0.f, -1.f,
-	};
-		
-	D3D11_BUFFER_DESC bufferDesc;
-	memset(&bufferDesc, 0, sizeof(bufferDesc));
-	bufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-	bufferDesc.Usage = D3D11_USAGE_DEFAULT;
-	bufferDesc.ByteWidth = sizeof(triangleVertices);
-		
-	D3D11_SUBRESOURCE_DATA data;
-	data.pSysMem = triangleVertices;
-	g_Device->CreateBuffer(&bufferDesc, &data, &g_VertexBuffer);
-
+void Application::CreateQuadBuffer()
+{	
 	VertexData quadVertices[6] =
 	{
 		-1.f, 1.f, 0.f,	// v0
@@ -475,8 +409,14 @@ void Application::CreateVertexBuffer()
 		1.f, 1.f,			// q3
 		0.f, 0.f, -1.f,
 	};
-	bufferDesc.ByteWidth = sizeof(triangleVertices);
 
+	D3D11_BUFFER_DESC bufferDesc;
+	memset(&bufferDesc, 0, sizeof(bufferDesc));
+	bufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+	bufferDesc.Usage = D3D11_USAGE_DEFAULT;
+	bufferDesc.ByteWidth = sizeof(quadVertices);
+
+	D3D11_SUBRESOURCE_DATA data;
 	data.pSysMem = quadVertices;
 	g_Device->CreateBuffer(&bufferDesc, &data, &g_QuadBuffer);
 }

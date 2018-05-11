@@ -7,10 +7,12 @@
 #include <d3dcompiler.h>
 #include <d3d9types.h>
 #include "DDSTextureLoader.h"
+#include "Object.h"
 
 using namespace DirectX;
 
 #define SPEED 16.f
+#define NUM_OBJ 1
 
 class Application
 {
@@ -38,35 +40,34 @@ private:
 	bool CreateShaders();
 	bool CreateConstantBuffer();
 	bool CreateGBuffer();
-
-	void CreateTexture();
-	void CreateVertexBuffer();
+	void CreateQuadBuffer();
 
 private:
+	Object** obj;
+
 	IDXGISwapChain*	g_SwapChain;
 	ID3D11Device* g_Device;
 	ID3D11DeviceContext* g_DeviceContext;
 	ID3D11RenderTargetView* g_RenderTargetView;
 
+	// VertexBuffer behöver vara en array om vi ska ha mer än 1 object i scenen.
 	ID3D11Buffer* g_VertexBuffer;
-	ID3D11Buffer* g_QuadBuffer;
+	ID3D11ShaderResourceView* g_ShaderResourceView;
+	ID3D11SamplerState* g_SamplerState;
 
 	ID3D11InputLayout* g_VertexLayout;
 	ID3D11InputLayout* g_DeferredVertexLayout;
 
 	ID3D11VertexShader* g_VertexShader;
-	ID3D11VertexShader* g_DefVertexShader;
-
 	ID3D11PixelShader* g_PixelShader;
-	ID3D11PixelShader* g_DefPixelShader;
+
 	ID3D11VertexShader* g_DeferredVertexShader;
 	ID3D11PixelShader* g_DeferredPixelShader;
-
 	ID3D11GeometryShader* g_GeometryShader;
 
-	ID3D11PixelShader* g_PixelShaderTexture;
-	ID3D11PixelShader* g_PixelShaderEverything;
+	ID3D11Buffer* g_QuadBuffer;
 
+	// Matrix data
 	ID3D11Buffer* g_ConstantBuffer;
 
 	ID3D11DepthStencilView* g_DepthStencilView;
@@ -76,9 +77,6 @@ private:
 	ID3D11Texture2D* g_GBufferTEX[3];
 	ID3D11RenderTargetView* g_GBufferRTV[3];
 	ID3D11ShaderResourceView* g_GBufferSRV[3];
-
-	ID3D11ShaderResourceView* g_ShaderResourceView;
-	ID3D11SamplerState* g_SamplerState;
 
 	struct ConstantBuffer
 	{
