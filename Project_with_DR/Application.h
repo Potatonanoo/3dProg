@@ -55,17 +55,11 @@ private:
 	ID3D11InputLayout* g_DeferredVertexLayout;
 
 	ID3D11VertexShader* g_VertexShader;
-	ID3D11VertexShader* g_DefVertexShader;
-
 	ID3D11PixelShader* g_PixelShader;
-	ID3D11PixelShader* g_DefPixelShader;
 	ID3D11VertexShader* g_DeferredVertexShader;
 	ID3D11PixelShader* g_DeferredPixelShader;
 
 	ID3D11GeometryShader* g_GeometryShader;
-
-	ID3D11PixelShader* g_PixelShaderTexture;
-	ID3D11PixelShader* g_PixelShaderEverything;
 
 	ID3D11Buffer* g_ConstantBuffer;
 
