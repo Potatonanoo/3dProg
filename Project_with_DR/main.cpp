@@ -10,7 +10,6 @@
 #pragma comment (lib, "d3dcompiler.lib")
 
 using namespace DirectX;
-// bluhahhahah
 #define WIDTH 1280
 #define HEIGHT 720
 
