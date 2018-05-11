@@ -21,6 +21,10 @@ public:
 	ID3D11ShaderResourceView* getShaderResourceView();
 	ID3D11SamplerState* getSamplerState();
 
+	void setVertexBuffer(ID3D11DeviceContext* g_DeviceContext);
+	void setShaderResourceView(ID3D11DeviceContext* g_DeviceContext);
+	void setSamplerState(ID3D11DeviceContext* g_DeviceContext);
+
 private:
 	void createVertexBuffer(ID3D11Device* g_Device);
 	void createTexture(ID3D11Device* g_Device);
@@ -35,6 +39,9 @@ private:
 		float u, v;
 		float nx, ny, nz;
 	};
+
+	UINT vertexSize = sizeof(float) * 8; // x, y, z, u, v, nx, ny, nz
+	UINT offset = 0;
 };
 
 #endif

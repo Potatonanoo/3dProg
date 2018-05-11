@@ -73,6 +73,9 @@ void Object::createVertexBuffer(ID3D11Device* g_Device)
 	D3D11_SUBRESOURCE_DATA data;
 	data.pSysMem = triangleVertices;
 	g_Device->CreateBuffer(&bufferDesc, &data, &g_VertexBuffer);
+
+	vertexSize = sizeof(float) * 8; // x, y, z, u, v, nx, ny, nz
+	offset = 0;
 }
 
 void Object::createTexture(ID3D11Device* g_Device)
@@ -100,7 +103,6 @@ void Object::createTexture(ID3D11Device* g_Device)
 	g_Device->CreateTexture2D(&texDesc, &subData, &texture);
 	g_Device->CreateShaderResourceView(texture, NULL, &g_ShaderResourceView);
 
-	// Texture sampling
 	D3D11_SAMPLER_DESC sampDesc = {};
 	sampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
 	sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
@@ -113,4 +115,19 @@ void Object::createTexture(ID3D11Device* g_Device)
 	sampDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
 
 	g_Device->CreateSamplerState(&sampDesc, &g_SamplerState);
+}
+
+void Object::setVertexBuffer(ID3D11DeviceContext* g_DeviceContext)
+{
+	g_DeviceContext->IASetVertexBuffers(0, 1, &g_VertexBuffer, &vertexSize, &offset);
+}
+
+void Object::setShaderResourceView(ID3D11DeviceContext* g_DeviceContext)
+{
+	g_DeviceContext->PSSetShaderResources(0, 1, &g_ShaderResourceView);
+}
+
+void Object::setSamplerState(ID3D11DeviceContext* g_DeviceContext)
+{
+	g_DeviceContext->PSSetSamplers(0, 1, &g_SamplerState);
 }

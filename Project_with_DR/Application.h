@@ -32,6 +32,7 @@ public:
 	bool Initialise();
 	bool Update(float dt);
 	void Render();
+	void createSamplerState();
 
 private:
 	bool CreateDirect3DContext();
@@ -51,8 +52,8 @@ private:
 	ID3D11RenderTargetView* g_RenderTargetView;
 
 	// VertexBuffer behöver vara en array om vi ska ha mer än 1 object i scenen.
-	ID3D11Buffer* g_VertexBuffer;
-	ID3D11ShaderResourceView* g_ShaderResourceView;
+	/*ID3D11Buffer* g_VertexBuffer;
+	ID3D11ShaderResourceView* g_ShaderResourceView;*/
 	ID3D11SamplerState* g_SamplerState;
 
 	ID3D11InputLayout* g_VertexLayout;

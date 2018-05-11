@@ -7,7 +7,6 @@ Application::Application(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lp
 	g_Device = nullptr;
 	g_DeviceContext = nullptr;
 	g_RenderTargetView = nullptr;
-	//g_VertexBuffer = nullptr;
 	g_VertexLayout = nullptr;
 	g_DeferredVertexLayout = nullptr;
 	g_VertexShader = nullptr;
@@ -15,8 +14,10 @@ Application::Application(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lp
 	g_GeometryShader = nullptr;
 	g_DepthStencilView = nullptr;
 	g_DepthStencilBuffer = nullptr;
-	//g_ShaderResourceView = nullptr;
-	//g_SamplerState = nullptr;
+
+	/*g_VertexBuffer = nullptr;
+	g_ShaderResourceView = nullptr;
+	g_SamplerState = nullptr;*/
 
 	this->width = width;
 	this->height = height;
@@ -106,16 +107,17 @@ void Application::Render()
 
 	for (int i = 0; i < NUM_OBJ; i++)
 	{
-		g_VertexBuffer = obj[NUM_OBJ]->getVertexBuffer();
-		g_ShaderResourceView = obj[NUM_OBJ]->getShaderResourceView();
-		g_SamplerState = obj[NUM_OBJ]->getSamplerState();
+		//g_VertexBuffer = obj[NUM_OBJ]->getVertexBuffer();
+		//g_ShaderResourceView = obj[NUM_OBJ]->getShaderResourceView();
+		//g_SamplerState = obj[NUM_OBJ]->getSamplerState();
 
 		D3D11_MAPPED_SUBRESOURCE dataPtr;
 		g_DeviceContext->Map(g_ConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &dataPtr);
 		memcpy(dataPtr.pData, &ObjData, sizeof(ConstantBuffer));
 		g_DeviceContext->Unmap(g_ConstantBuffer, 0);
 
-		g_DeviceContext->IASetVertexBuffers(0, 1, &g_VertexBuffer, &vertexSize, &offset);
+		obj[NUM_OBJ]->setVertexBuffer(g_DeviceContext);
+		//g_DeviceContext->IASetVertexBuffers(0, 1, &g_VertexBuffer, &vertexSize, &offset);
 
 		g_DeviceContext->VSSetShader(g_DeferredVertexShader, nullptr, 0);
 		g_DeviceContext->GSSetShader(g_GeometryShader, nullptr, 0);
@@ -125,8 +127,10 @@ void Application::Render()
 
 		g_DeviceContext->GSSetConstantBuffers(0, 1, &g_ConstantBuffer);
 
-		g_DeviceContext->PSSetShaderResources(0, 1, &g_ShaderResourceView);
-		g_DeviceContext->PSSetSamplers(0, 1, &g_SamplerState);
+		obj[NUM_OBJ]->setShaderResourceView(g_DeviceContext);
+		//g_DeviceContext->PSSetShaderResources(0, 1, &g_ShaderResourceView);
+		obj[NUM_OBJ]->setSamplerState(g_DeviceContext);
+		//g_DeviceContext->PSSetSamplers(0, 1, &g_SamplerState);
 
 		g_DeviceContext->Draw(6, 0);
 	}
@@ -419,4 +423,20 @@ void Application::CreateQuadBuffer()
 	D3D11_SUBRESOURCE_DATA data;
 	data.pSysMem = quadVertices;
 	g_Device->CreateBuffer(&bufferDesc, &data, &g_QuadBuffer);
+}
+
+void Application::createSamplerState()
+{
+	D3D11_SAMPLER_DESC sampDesc = {};
+	sampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
+	sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+	sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+	sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+	sampDesc.MipLODBias = 0;
+	sampDesc.MaxAnisotropy = 1;
+	sampDesc.MinLOD = 0;
+	sampDesc.MaxLOD = D3D11_FLOAT32_MAX;
+	sampDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
+
+	g_Device->CreateSamplerState(&sampDesc, &g_SamplerState);
 }
