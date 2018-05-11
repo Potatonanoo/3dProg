@@ -107,17 +107,17 @@ void Application::Render()
 
 	for (int i = 0; i < NUM_OBJ; i++)
 	{
-		//g_VertexBuffer = obj[NUM_OBJ]->getVertexBuffer();
-		//g_ShaderResourceView = obj[NUM_OBJ]->getShaderResourceView();
-		//g_SamplerState = obj[NUM_OBJ]->getSamplerState();
+		//Get the World Matrix from the obj class
+		//ObjData.WorldMatrix = obj[i]->getWorldMatrix();
 
 		D3D11_MAPPED_SUBRESOURCE dataPtr;
 		g_DeviceContext->Map(g_ConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &dataPtr);
 		memcpy(dataPtr.pData, &ObjData, sizeof(ConstantBuffer));
 		g_DeviceContext->Unmap(g_ConstantBuffer, 0);
 
-		obj[NUM_OBJ]->setVertexBuffer(g_DeviceContext);
-		//g_DeviceContext->IASetVertexBuffers(0, 1, &g_VertexBuffer, &vertexSize, &offset);
+		obj[i]->setVertexBuffer(g_DeviceContext);
+		obj[i]->setShaderResourceView(g_DeviceContext);
+		obj[i]->setSamplerState(g_DeviceContext);
 
 		g_DeviceContext->VSSetShader(g_DeferredVertexShader, nullptr, 0);
 		g_DeviceContext->GSSetShader(g_GeometryShader, nullptr, 0);
@@ -126,11 +126,6 @@ void Application::Render()
 		g_DeviceContext->DSSetShader(nullptr, nullptr, 0);
 
 		g_DeviceContext->GSSetConstantBuffers(0, 1, &g_ConstantBuffer);
-
-		obj[NUM_OBJ]->setShaderResourceView(g_DeviceContext);
-		//g_DeviceContext->PSSetShaderResources(0, 1, &g_ShaderResourceView);
-		obj[NUM_OBJ]->setSamplerState(g_DeviceContext);
-		//g_DeviceContext->PSSetSamplers(0, 1, &g_SamplerState);
 
 		g_DeviceContext->Draw(6, 0);
 	}
@@ -152,7 +147,7 @@ void Application::Render()
 	g_DeviceContext->IASetInputLayout(g_VertexLayout);
 	
 	g_DeviceContext->PSSetShaderResources(0, 3, g_GBufferSRV);
-	g_DeviceContext->PSSetSamplers(0, 1, &g_SamplerState);
+	//g_DeviceContext->PSSetSamplers(0, 1, &g_SamplerState);
 
 	g_DeviceContext->Draw(4, 0);
 
