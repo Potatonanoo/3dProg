@@ -86,6 +86,7 @@ void Application::Render()
 {
 	float color[4]{ 0.f, 0.f, 1.f, 1.f };
 	g_DeviceContext->ClearRenderTargetView(g_RenderTargetView, color);
+
 	for (int i = 0; i < 3; i++)
 		g_DeviceContext->ClearRenderTargetView(g_GBufferRTV[i], color);
 

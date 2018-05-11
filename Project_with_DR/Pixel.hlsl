@@ -16,7 +16,6 @@ struct PS_IN
 float4 PS_main( in PS_IN input) : SV_Target0
 {
 	float3 normal = NormalTexture.Sample(SampleType, input.texCoord).xyz;
-
 	float3 diffuse = DiffuseTexture.Sample(SampleType, input.texCoord).xyz;
 	float3 position = PositionTexture.Sample(SampleType, input.texCoord).xyz;
 
