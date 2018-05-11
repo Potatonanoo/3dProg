@@ -5,7 +5,7 @@
 #include <d3d9types.h>
 #include <time.h>
 #include "Application.h"
-// Emil Branching - Test
+
 #pragma comment (lib, "d3d11.lib")
 #pragma comment (lib, "d3dcompiler.lib")
 
