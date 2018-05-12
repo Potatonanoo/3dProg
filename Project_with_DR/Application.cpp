@@ -8,15 +8,15 @@ Application::Application(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lp
 	g_DeviceContext = nullptr;
 	g_RenderTargetView = nullptr;
 	g_VertexBuffer = nullptr;
+	g_QuadBuffer = nullptr;
 	g_VertexLayout = nullptr;
 	g_DeferredVertexLayout = nullptr;
 	g_VertexShader = nullptr;
-	g_DefVertexShader = nullptr;
+	g_DeferredVertexShader = nullptr;
 	g_PixelShader = nullptr;
-	g_DefPixelShader = nullptr;
+	g_DeferredPixelShader = nullptr;
 	g_GeometryShader = nullptr;
-	g_PixelShaderTexture = nullptr;
-	g_PixelShaderEverything = nullptr;
+	g_ConstantBuffer = nullptr;
 	g_DepthStencilView = nullptr;
 	g_DepthStencilBuffer = nullptr;
 	g_ShaderResourceView = nullptr;
@@ -86,6 +86,7 @@ void Application::Render()
 {
 	float color[4]{ 0.f, 0.f, 1.f, 1.f };
 	g_DeviceContext->ClearRenderTargetView(g_RenderTargetView, color);
+
 	for (int i = 0; i < 3; i++)
 		g_DeviceContext->ClearRenderTargetView(g_GBufferRTV[i], color);
 
