@@ -12,7 +12,7 @@
 using namespace DirectX;
 
 #define SPEED 16.f
-#define NUM_OBJ 1
+#define NUM_OBJ 5
 
 class Application
 {

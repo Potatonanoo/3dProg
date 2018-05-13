@@ -15,10 +15,6 @@ Application::Application(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lp
 	g_DepthStencilView = nullptr;
 	g_DepthStencilBuffer = nullptr;
 
-	/*g_VertexBuffer = nullptr;
-	g_ShaderResourceView = nullptr;
-	g_SamplerState = nullptr;*/
-
 	this->width = width;
 	this->height = height;
 
@@ -57,17 +53,30 @@ bool Application::Initialise()
 
 	obj = new Object*[NUM_OBJ];
 
-	for (int i = 0; i < NUM_OBJ; i++)
-	{
-		obj[i] = nullptr;
-		obj[i] = new Object(g_Device);
-	}
+	obj[0] = new Object(g_Device, "filename1", "texture");
+	obj[0]->rotate(-0.2f, 0.f, 0.f);
+	obj[0]->translate(-1.2f, -0.6f, 0.f);
+
+	obj[1] = new Object(g_Device, "filename2", "texture");
+	obj[1]->rotate(0.f, 1.f, 0.f);
+	obj[1]->translate(2.f, 0.f, 1.f);
+
+	obj[2] = new Object(g_Device, "filename3", "texture");
+	obj[2]->rotate(0.f, 1.f, 0.f);
+	obj[2]->translate(0.f, 0.f, 4.f);
+
+	obj[3] = new Object(g_Device, "filename4", "texture");
+	obj[3]->rotate(0.f, 1.f, 0.f);
+	obj[3]->translate(1.2f, 2.f, 3.f);
+
+	obj[4] = new Object(g_Device, "filename5", "texture");
+	obj[4]->rotate(0.f, 1.f, 0.f);
+	obj[4]->translate(-1.f, 2.f, 2.f);
 
 	result = CreateDepthBuffer();
 	SetViewport();
 	result = CreateShaders();
 	CreateQuadBuffer();
-	//CreateTexture();
 	result = CreateConstantBuffer();
 	result = CreateGBuffer();
 
@@ -77,9 +86,6 @@ bool Application::Initialise()
 /* [Uppdaterar allt i våran scen. (Rotation, rörelser, osv)] */
 bool Application::Update(float dt)
 {
-	objAngle += (SPEED * dt);
-	ObjData.WorldMatrix = XMMatrixRotationY(objAngle);
-
 	return true;
 }
 
@@ -104,11 +110,12 @@ void Application::Render()
 
 	UINT vertexSize = sizeof(float) * 8; // x, y, z, u, v, nx, ny, nz
 	UINT offset = 0;
+	UINT vertexCount;
 
 	for (int i = 0; i < NUM_OBJ; i++)
 	{
 		//Get the World Matrix from the obj class
-		//ObjData.WorldMatrix = obj[i]->getWorldMatrix();
+		ObjData.WorldMatrix = obj[i]->getWorldMatrix();
 
 		D3D11_MAPPED_SUBRESOURCE dataPtr;
 		g_DeviceContext->Map(g_ConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &dataPtr);
@@ -127,7 +134,9 @@ void Application::Render()
 
 		g_DeviceContext->GSSetConstantBuffers(0, 1, &g_ConstantBuffer);
 
-		g_DeviceContext->Draw(6, 0);
+		vertexCount = obj[i]->getVertexCount();
+
+		g_DeviceContext->Draw(vertexCount, 0);
 	}
 
 	// Screen Quad
