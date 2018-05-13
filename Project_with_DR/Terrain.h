@@ -51,7 +51,7 @@ private:
 
 	initInfo terrain_info;
 	DirectX::XMFLOAT4X4 world;
-	vector<DirectX::XMFLOAT2>PatchBoundsY;
+	std::vector<DirectX::XMFLOAT2>PatchBoundsY;
 
 	ID3D11Buffer* mQuadPatchVB;
 	ID3D11Buffer* mQuadPatchIB;
@@ -65,7 +65,7 @@ public:
 	Terrain();
 	~Terrain();
 
-	vector<float> heightMap;
+	std::vector<float> heightMap;
 
 	float GetWidth()const;
 	float getDepth()const;
