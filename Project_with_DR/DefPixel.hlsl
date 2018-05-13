@@ -20,7 +20,7 @@ PS_OUT PS_main( in PS_IN input)
 {
 	PS_OUT output;
 
-	float4 normal = normalize( input.normal );
+	float4 normal = float4(normalize( input.normal.xyz ), 1);
 
 	// Output G-buffer values
 	output.normal = normal;
