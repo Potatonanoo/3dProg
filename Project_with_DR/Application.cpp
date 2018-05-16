@@ -20,7 +20,6 @@ Application::Application(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lp
 
 	// Input matrix data
 	ObjData.WorldMatrix = XMMatrixIdentity();
-	ObjData.ViewMatrix = XMMatrixLookAtLH({ 0.f, 0.f, -2.f }, { 0.f, 0.f, 0.f }, { 0.f, 1.f, 0.f });
 	ObjData.ProjectionMatrix = XMMatrixPerspectiveFovLH(XM_PI*0.45f, (float)width / (float)height, 0.1f, 20.f);
 
 	g_hInstance = hInstance;
@@ -53,25 +52,27 @@ bool Application::Initialise()
 
 	obj = new Object*[NUM_OBJ];
 
-	obj[0] = new Object(g_Device, "filename1", "texture");
+	obj[0] = new Object(g_Device, "filename1", L"brick.dds");
 	obj[0]->rotate(-0.2f, 0.f, 0.f);
 	obj[0]->translate(-1.2f, -0.6f, 0.f);
 
-	obj[1] = new Object(g_Device, "filename2", "texture");
+	obj[1] = new Object(g_Device, "filename2", L"brick.dds");
 	obj[1]->rotate(0.f, 1.f, 0.f);
 	obj[1]->translate(2.f, 0.f, 1.f);
 
-	obj[2] = new Object(g_Device, "filename3", "texture");
+	obj[2] = new Object(g_Device, "filename3", L"brick.dds");
 	obj[2]->rotate(0.f, 1.f, 0.f);
 	obj[2]->translate(0.f, 0.f, 4.f);
 
-	obj[3] = new Object(g_Device, "filename4", "texture");
+	obj[3] = new Object(g_Device, "filename4", L"brick.dds");
 	obj[3]->rotate(0.f, 1.f, 0.f);
 	obj[3]->translate(1.2f, 2.f, 3.f);
 
-	obj[4] = new Object(g_Device, "filename5", "texture");
+	obj[4] = new Object(g_Device, "filename5", L"brick.dds");
 	obj[4]->rotate(0.f, 1.f, 0.f);
 	obj[4]->translate(-1.f, 2.f, 2.f);
+
+	camera = new Camera({ 0.f, 0.f, -2.f, 1.f }, { 0.f, 0.f, 1.f, 1.f }, { 0.f, 1.f, 0.f, 1.f });
 
 	result = CreateDepthBuffer();
 	SetViewport();
@@ -86,6 +87,10 @@ bool Application::Initialise()
 /* [Uppdaterar allt i våran scen. (Rotation, rörelser, osv)] */
 bool Application::Update(float dt)
 {
+	camera->update(dt);
+
+	ObjData.ViewMatrix = camera->getViewMatrix();
+
 	return true;
 }
 

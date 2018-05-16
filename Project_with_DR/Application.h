@@ -8,10 +8,10 @@
 #include <d3d9types.h>
 #include "DDSTextureLoader.h"
 #include "Object.h"
+#include "Camera.h"
 
 using namespace DirectX;
 
-#define SPEED 16.f
 #define NUM_OBJ 5
 
 class Application
@@ -45,6 +45,7 @@ private:
 
 private:
 	Object** obj;
+	Camera* camera;
 
 	IDXGISwapChain*	g_SwapChain;
 	ID3D11Device* g_Device;

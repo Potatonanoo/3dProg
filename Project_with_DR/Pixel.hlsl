@@ -20,11 +20,17 @@ float4 PS_main( in PS_IN input) : SV_Target0
 	float3 diffuse = DiffuseTexture.Sample(SampleType, input.texCoord).xyz;
 	float3 position = PositionTexture.Sample(SampleType, input.texCoord).xyz;
 
-
-	float3 lightPos = float3(0.f, 0.f, 0.f);
+	float3 lightPos = float3(0.f, 0.f, 2.f);
 	float3 lightRay = lightPos - position;
 
-	float lightIntensity = 1/max(length(lightRay), 1.f);
+	float lightIntensity;
+
+	if (dot(normalize(normal), normalize(lightRay)) > 0)
+	{
+		lightIntensity = max(1.3f / length(lightRay), 0.2f);
+	}
+	else
+		lightIntensity = 0.2f;
 
 	return float4(diffuse, 1.0f) * lightIntensity;
 

@@ -6,7 +6,7 @@ struct PS_IN
 	float4 pos_SV	: SV_POSITION;
 	float4 pos_WS	: POSITION;
 	float2 texCoord : TEXCOORD;
-	float4 normal	: NORMAL;
+	float3 normal	: NORMAL;
 };
 
 struct PS_OUT
@@ -20,7 +20,7 @@ PS_OUT PS_main( in PS_IN input)
 {
 	PS_OUT output;
 
-	float4 normal = float4(normalize( input.normal.xyz ), 1);
+	float4 normal = float4(normalize( input.normal ), 1.f);
 
 	// Output G-buffer values
 	output.normal = normal;

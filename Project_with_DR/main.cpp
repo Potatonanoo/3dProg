@@ -31,7 +31,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 	{
 		ShowWindow(wndHandle, nCmdShow);
 
-		while (WM_QUIT != msg.message)
+		while (WM_QUIT != msg.message && !GetAsyncKeyState(VK_ESCAPE))
 		{
 			if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
 			{

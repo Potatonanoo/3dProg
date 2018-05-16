@@ -16,7 +16,7 @@ class Object
 {
 public:
 	Object();
-	Object(ID3D11Device* g_Device, string filename, string texture);
+	Object(ID3D11Device* g_Device, string filename, wchar_t* texture);
 	~Object();
 	
 	ID3D11Buffer* getVertexBuffer();

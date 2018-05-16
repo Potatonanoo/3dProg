@@ -10,13 +10,13 @@ Object::Object()
 	WorldMatrix = XMMatrixIdentity();
 }
 
-Object::Object(ID3D11Device* g_Device, string filename, string texture)
+Object::Object(ID3D11Device* g_Device, string filename, wchar_t* texture)
 {
 	objAngle = 0;
 	vertexCount = 0;
 	WorldMatrix = XMMatrixIdentity();
 	createVertexBuffer(g_Device, filename);
-	createTexture(g_Device, L"test");
+	createTexture(g_Device, texture);
 }
 
 Object::~Object()
@@ -107,7 +107,7 @@ void Object::createVertexBuffer(ID3D11Device* g_Device, string filename)
 void Object::createTexture(ID3D11Device* g_Device, wchar_t* filename)
 {
 	ID3D11Resource* pTexture = nullptr;
-	DirectX::CreateDDSTextureFromFile(g_Device, L"brick.dds", &pTexture, &g_ShaderResourceView);
+	DirectX::CreateDDSTextureFromFile(g_Device, filename, &pTexture, &g_ShaderResourceView);
 
 	D3D11_SAMPLER_DESC sampDesc = {};
 	sampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;

@@ -9,7 +9,7 @@ struct GS_IN
 {
 	float4 pos		: POSITION;
 	float2 texCoord : TEXCOORD;
-	float4 normal	: NORMAL;
+	float3 normal	: NORMAL;
 };
 
 struct GS_OUT
@@ -17,7 +17,7 @@ struct GS_OUT
 	float4 pos_SV	: SV_POSITION;
 	float4 pos_WS	: POSITION;
 	float2 texCoord : TEXCOORD;
-	float4 normal	: NORMAL;
+	float3 normal	: NORMAL;
 };
 
 [maxvertexcount(12)]
