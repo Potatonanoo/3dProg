@@ -110,14 +110,14 @@ void Camera::update(float dt)
 	if (mousePosition.y != mouseY)
 	{
 		float difY = mouseY - mousePosition.y;
-		rotationY = difY * sens;
+		rotationY += difY * sens;
 
-		if (rotationY > 80.f)
+		if (rotationY > 1.f && difY * sens < 0)
 			rotationY = 80.f;
 		else if (rotationY < -80.f)
 			rotationY = -80.f;
 
-		XMMATRIX rotation = XMMatrixRotationAxis(xmRight, -rotationY);
+		XMMATRIX rotation = XMMatrixRotationAxis(xmRight, -difY * sens);
 		xmForward = XMVector3TransformCoord(xmForward, rotation);
 		XMStoreFloat4(&forward, xmForward);
 	}
