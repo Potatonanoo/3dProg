@@ -6,7 +6,8 @@ texture2D lposTexture			: register (t3);
 texture2D ShadowMappingTexture	: register (t4);
 
 // Sampler
-SamplerState SampleType	: register(s0);
+SamplerState SampleType			: register(s0);
+//SamplerState ComparisonSampler	: register(s1);
 
 struct PS_IN
 {

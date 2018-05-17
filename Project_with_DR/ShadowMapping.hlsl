@@ -17,9 +17,9 @@ float4 ShadowMapVS(VS_IN input) : SV_POSITION
 {
 	float posL = float4(input.pos, 1.f);
 
-	posL = mul(posL, WorldMatrix);
-	posL = mul(posL, LightViewMatrix);
-	posL = mul(posL, ProjectionMatrix);
+	posL = mul(WorldMatrix, posL);
+	posL = mul(LightViewMatrix, posL);
+	posL = mul(ProjectionMatrix, posL);
 
 	return posL;
 }

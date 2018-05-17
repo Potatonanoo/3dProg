@@ -103,7 +103,7 @@ void Application::Render()
 	for (int i = 0; i < 4; i++)
 		g_DeviceContext->ClearRenderTargetView(g_GBufferRTV[i], color);
 
-	g_DeviceContext->ClearDepthStencilView(g_ShadowMapDepthView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+	g_DeviceContext->ClearDepthStencilView(g_ShadowMapDepthView, D3D11_CLEAR_DEPTH, 1.0f, 0);
 	g_DeviceContext->ClearDepthStencilView(g_DepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
 	//** SHADOW MAPPING **//
@@ -146,6 +146,7 @@ void Application::Render()
 
 	// Preperation for first draw call
 	g_DeviceContext->OMSetRenderTargets(4, g_GBufferRTV, g_DepthStencilView);
+
 
 	g_DeviceContext->IASetInputLayout(g_DeferredVertexLayout);
 
@@ -198,6 +199,7 @@ void Application::Render()
 	g_DeviceContext->PSSetShaderResources(2, 1, &g_GBufferSRV[2]);
 	g_DeviceContext->PSSetShaderResources(3, 1, &g_GBufferSRV[3]);
 	g_DeviceContext->PSSetShaderResources(4, 1, &g_ShadowMapSRV);
+	//g_DeviceContext->PSSetSamplers(1, 1, &g_ComparisonSamplerState); // Access violation writing location
 
 	g_DeviceContext->Draw(4, 0);
 
@@ -500,6 +502,25 @@ void Application::createSamplerState()
 	sampDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
 
 	g_Device->CreateSamplerState(&sampDesc, &g_SamplerState);
+
+
+	D3D11_SAMPLER_DESC comparisonSamplerDesc;
+	ZeroMemory(&comparisonSamplerDesc, sizeof(D3D11_SAMPLER_DESC));
+	comparisonSamplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_BORDER;
+	comparisonSamplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_BORDER;
+	comparisonSamplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_BORDER;
+	comparisonSamplerDesc.BorderColor[0] = 1.0f;
+	comparisonSamplerDesc.BorderColor[1] = 1.0f;
+	comparisonSamplerDesc.BorderColor[2] = 1.0f;
+	comparisonSamplerDesc.BorderColor[3] = 1.0f;
+	comparisonSamplerDesc.MinLOD = 0.f;
+	comparisonSamplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+	comparisonSamplerDesc.MipLODBias = 0.f;
+	comparisonSamplerDesc.MaxAnisotropy = 0;
+	comparisonSamplerDesc.ComparisonFunc = D3D11_COMPARISON_LESS_EQUAL;
+	comparisonSamplerDesc.Filter = D3D11_FILTER_COMPARISON_MIN_MAG_MIP_POINT;
+
+	g_Device->CreateSamplerState(&comparisonSamplerDesc, &g_ComparisonSamplerState);
 }
 
 bool Application::CreateShadowMap()

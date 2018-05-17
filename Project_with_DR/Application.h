@@ -54,6 +54,8 @@ private:
 	ID3D11RenderTargetView* g_RenderTargetView;
 
 	ID3D11SamplerState* g_SamplerState;
+	ID3D11SamplerState* g_ComparisonSamplerState;
+
 
 	// Normal Rendering
 	ID3D11InputLayout* g_VertexLayout;
