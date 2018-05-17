@@ -78,21 +78,21 @@ private:
 	// Shadow Mapping
 	ID3D11InputLayout* g_ShadowMappingVertexLayout;
 	ID3D11VertexShader* g_ShadowMappingVertexShader;
-	ID3D11PixelShader* g_ShadowMappingPixelShader;
 	ID3D11DepthStencilView* g_ShadowMapDepthView;
 	ID3D11Texture2D* g_ShadowMapBuffer;
 	ID3D11ShaderResourceView* g_ShadowMapSRV;
 
 	// G-Buffer
-	ID3D11Texture2D* g_GBufferTEX[3];
-	ID3D11RenderTargetView* g_GBufferRTV[3];
-	ID3D11ShaderResourceView* g_GBufferSRV[3];
+	ID3D11Texture2D* g_GBufferTEX[4];
+	ID3D11RenderTargetView* g_GBufferRTV[4];
+	ID3D11ShaderResourceView* g_GBufferSRV[4];
 
 	struct ConstantBuffer
 	{
 		XMMATRIX WorldMatrix;
 		XMMATRIX ViewMatrix;
 		XMMATRIX ProjectionMatrix;
+		XMMATRIX LightViewMatrix;
 	};
 	ConstantBuffer ObjData;
 

@@ -3,6 +3,7 @@ cbuffer ContantBuffer : register(b0)
 	float4x4 WorldMatrix;
 	float4x4 ViewMatrix;  // The view matrix of the light
 	float4x4 ProjectionMatrix;
+	float4x4 LightViewMatrix;
 };
 
 struct VS_IN
@@ -12,23 +13,13 @@ struct VS_IN
 	float2 texCoord		: TEXCOORD;
 };
 
-struct PS_IN
+float4 ShadowMapVS(VS_IN input) : SV_POSITION
 {
-	float4 pos			: SV_POSITION;
-};
+	float posL = float4(input.pos, 1.f);
 
-PS_IN ShadowMapVS(VS_IN input)
-{
-	PS_IN output;
+	posL = mul(posL, WorldMatrix);
+	posL = mul(posL, LightViewMatrix);
+	posL = mul(posL, ProjectionMatrix);
 
-	output.pos = mul(input.pos, WorldMatrix);
-	output.pos = mul(output.pos, ViewMatrix);
-	output.pos = mul(output.pos, ProjectionMatrix);
-
-	return output;
-}
-
-void ShadowMapPS(PS_IN input)
-{
-
+	return posL;
 }

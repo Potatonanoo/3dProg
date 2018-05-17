@@ -9,7 +9,7 @@ Camera::Camera(XMFLOAT4 position, XMFLOAT4 forward, XMFLOAT4 up)
 	this->up = up;
 	rotationX = 0;
 	rotationY = 0;
-	speed = 10.f;
+	speed = 25.f;
 	sens = 0.001f;
 	mouseX = 640.f;
 	mouseY = 360.f;
@@ -37,7 +37,7 @@ void Camera::update(float dt)
 {
 	XMVECTOR xmForward = XMLoadFloat4(&forward);
 	XMVECTOR xmUp = XMLoadFloat4(&up);
-	XMVECTOR xmRight = XMVector3Cross(xmUp, xmForward);
+	XMVECTOR xmRight =  XMVector3Normalize(XMVector3Cross(xmUp, xmForward));
 	XMStoreFloat4(&right, xmRight);
 
 	if (GetAsyncKeyState('W') < 0)

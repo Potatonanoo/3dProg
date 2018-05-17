@@ -109,12 +109,12 @@ void Object::createVertexBuffer(ID3D11Device* g_Device, string filename)
 	{
 		VertexData triangleVertices[6] =
 		{
-			-4.f, 0.f, 4.f,		0.f, 0.f,	0.f, 1.f, 0.f,
-			4.f, 0.f, 4.f,		1.f, 0.f,	0.f, 1.f, 0.f,
-			-4.f, 0.f, -4.f,		0.f, 1.f,	0.f, 1.f, 0.f,
-			4.f, 0.f, 4.f,		1.f, 0.f,	0.f, 1.f, 0.f,
-			4.f, 0.f, -4.f,		1.f, 1.f,	0.f, 1.f, 0.f,
-			-4.f, 0.f, -4.f,		0.f, 1.f,	0.f, 1.f, 0.f,
+			-4.f, 4.f, -0.5f,		0.f, 0.f,	0.f, 0.f, -1.f,
+			4.f, 4.f, -0.5f,		1.f, 0.f,	0.f, 0.f, -1.f,
+			-4.f, -4.f, -0.5f,	0.f, 1.f,	0.f, 0.f, -1.f,
+			4.f, 4.f, -0.5f,		1.f, 0.f,	0.f, 0.f, -1.f,
+			4.f, -4.f, -0.5f,		1.f, 1.f,	0.f, 0.f, -1.f,
+			-4.f, -4.f, -0.5f,	0.f, 1.f,	0.f, 0.f, -1.f,
 		};
 
 		vertexCount = 6;

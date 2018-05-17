@@ -20,7 +20,7 @@ Application::Application(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lp
 
 	// Input matrix data
 	ObjData.WorldMatrix = XMMatrixIdentity();
-	ObjData.ViewMatrix = 
+	ObjData.LightViewMatrix = XMMatrixLookAtLH({ 0.f, 0.f, -5.f }, { 0.f, 0.f, 0.f }, { 0.f, 1.f, 0.f });
 	ObjData.ProjectionMatrix = XMMatrixPerspectiveFovLH(XM_PI*0.45f, (float)width / (float)height, 0.1f, 20.f);
 
 	g_hInstance = hInstance;
@@ -74,9 +74,9 @@ bool Application::Initialise()
 	obj[4]->translate(-1.f, 0.f, 2.f);
 
 	obj[5] = new Object(g_Device, "notcube", L"brick.dds");
-	obj[5]->translate(0.f, -1.f, 2.f);
+	obj[5]->translate(0.f, 0.f, 8.f);
 
-	camera = new Camera({ 0.f, 0.f, -2.f, 1.f }, { 0.f, 0.f, 1.f, 1.f }, { 0.f, 1.f, 0.f, 1.f });
+	camera = new Camera({ 0.f, 0.f, -5.f, 1.f }, { 0.f, 0.f, 1.f, 1.f }, { 0.f, 1.f, 0.f, 1.f });
 
 	result = CreateDepthBuffer();
 	SetViewport();
@@ -93,29 +93,23 @@ bool Application::Initialise()
 bool Application::Update(float dt)
 {
 	camera->update(dt);
-
-	ObjData.ViewMatrix = camera->getViewMatrix();
-
 	return true;
 }
 
-/* [Renderar våran scen i 3 steg. 
-1: Kopplar våran gBuffer som RenderTarget och sätter rätt InputLayout till VertexShadern. 
-2: Skapar våran pipeline och ritar ut scenen till våran gBuffer.
-3: Byter RenderTarget till våran backBuffer igen och ritar ut. (data från gBuffern hämtas ut i PixelShader)] */
 void Application::Render()
 {
 	float color[4]{ 0.f, 0.f, 1.f, 1.f };
 	g_DeviceContext->ClearRenderTargetView(g_RenderTargetView, color);
-	for (int i = 0; i < 3; i++)
+	for (int i = 0; i < 4; i++)
 		g_DeviceContext->ClearRenderTargetView(g_GBufferRTV[i], color);
 
+	g_DeviceContext->ClearDepthStencilView(g_ShadowMapDepthView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 	g_DeviceContext->ClearDepthStencilView(g_DepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
-	// Preperation for first draw call
-	g_DeviceContext->OMSetRenderTargets(3, g_GBufferRTV, g_DepthStencilView);
+	//** SHADOW MAPPING **//
+	g_DeviceContext->OMGetRenderTargets(0, 0, &g_ShadowMapDepthView);
 
-	g_DeviceContext->IASetInputLayout(g_DeferredVertexLayout);
+	g_DeviceContext->IASetInputLayout(g_ShadowMappingVertexLayout);
 	g_DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	UINT vertexSize = sizeof(float) * 8; // x, y, z, u, v, nx, ny, nz
@@ -126,6 +120,41 @@ void Application::Render()
 	{
 		//Get the World Matrix from the obj class
 		ObjData.WorldMatrix = obj[i]->getWorldMatrix();
+
+		D3D11_MAPPED_SUBRESOURCE dataPtr;
+		g_DeviceContext->Map(g_ConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &dataPtr);
+		memcpy(dataPtr.pData, &ObjData, sizeof(ConstantBuffer));
+		g_DeviceContext->Unmap(g_ConstantBuffer, 0);
+
+		obj[i]->setVertexBuffer(g_DeviceContext);
+
+		g_DeviceContext->VSSetShader(g_ShadowMappingVertexShader, nullptr, 0);
+		g_DeviceContext->GSSetShader(nullptr, nullptr, 0);
+		g_DeviceContext->PSSetShader(nullptr , nullptr, 0);
+		g_DeviceContext->HSSetShader(nullptr, nullptr, 0);
+		g_DeviceContext->DSSetShader(nullptr, nullptr, 0);
+
+		g_DeviceContext->VSSetConstantBuffers(0, 1, &g_ConstantBuffer);
+
+		vertexCount = obj[i]->getVertexCount();
+
+		g_DeviceContext->Draw(vertexCount, 0);
+	}
+
+
+	//** DEFERRED RENDERING **//
+
+	// Preperation for first draw call
+	g_DeviceContext->OMSetRenderTargets(4, g_GBufferRTV, g_DepthStencilView);
+
+	g_DeviceContext->IASetInputLayout(g_DeferredVertexLayout);
+
+
+	for (int i = 0; i < NUM_OBJ; i++)
+	{
+		//Get the World Matrix from the obj class
+		ObjData.WorldMatrix = obj[i]->getWorldMatrix();
+		ObjData.ViewMatrix = camera->getViewMatrix();
 
 		D3D11_MAPPED_SUBRESOURCE dataPtr;
 		g_DeviceContext->Map(g_ConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &dataPtr);
@@ -149,9 +178,8 @@ void Application::Render()
 		g_DeviceContext->Draw(vertexCount, 0);
 	}
 
-	// Screen Quad
+	//** NORMAL RENDERING **//
 	g_DeviceContext->OMSetRenderTargets(1, &g_RenderTargetView, NULL);
-	
 
 	vertexSize = sizeof(float) * 8; // x, y, z, u, v, nx, ny, nz
 	g_DeviceContext->IASetVertexBuffers(0, 1, &g_QuadBuffer, &vertexSize, &offset);
@@ -165,14 +193,18 @@ void Application::Render()
 	g_DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 	g_DeviceContext->IASetInputLayout(g_VertexLayout);
 	
-	g_DeviceContext->PSSetShaderResources(0, 3, g_GBufferSRV);
+	g_DeviceContext->PSSetShaderResources(0, 1, &g_GBufferSRV[0]);
+	g_DeviceContext->PSSetShaderResources(1, 1, &g_GBufferSRV[1]);
+	g_DeviceContext->PSSetShaderResources(2, 1, &g_GBufferSRV[2]);
+	g_DeviceContext->PSSetShaderResources(3, 1, &g_GBufferSRV[3]);
+	g_DeviceContext->PSSetShaderResources(4, 1, &g_ShadowMapSRV);
 
 	g_DeviceContext->Draw(4, 0);
 
 	g_SwapChain->Present(0, 0);
 
-	ID3D11ShaderResourceView* clear[] = { nullptr, nullptr, nullptr };
-	g_DeviceContext->PSSetShaderResources(0, 3, clear);
+	ID3D11ShaderResourceView* clear[] = { nullptr, nullptr, nullptr, nullptr, nullptr };
+	g_DeviceContext->PSSetShaderResources(0, 5, clear);
 }
 
 /* [Skapar g_Device, g_DeviceContext, g_SwapChain, g_RenderTargetView (backbufferRTV)] */
@@ -351,18 +383,6 @@ bool Application::CreateShaders()
 	if (FAILED(hr))
 		return false;
 
-	//---------- ShadowMapping Pixel Shader ----------//
-
-	pPS = nullptr;
-	error = nullptr;
-	hr = D3DCompileFromFile(L"ShadowMapping.hlsl", nullptr, nullptr, "ShadowMapPS", "ps_5_0", 0, 0, &pPS, &error);
-	if (FAILED(hr))
-		return false;
-	hr = g_Device->CreatePixelShader(pPS->GetBufferPointer(), pPS->GetBufferSize(), nullptr, &g_ShadowMappingPixelShader);
-	if (FAILED(hr))
-		return false;
-
-
 	pVS->Release();
 	pGS->Release();
 	pPS->Release();
@@ -403,7 +423,7 @@ bool Application::CreateGBuffer()
 	textureDesc.MiscFlags = 0;
 	textureDesc.CPUAccessFlags = 0;
 
-	for (int i = 0; i < 3; i++)
+	for (int i = 0; i < 4; i++)
 	{
 		g_Device->CreateTexture2D(&textureDesc, NULL, &g_GBufferTEX[i]);
 	}
@@ -414,7 +434,7 @@ bool Application::CreateGBuffer()
 	renderTargetViewDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
 	renderTargetViewDesc.Texture2D.MipSlice = 0;
 
-	for (int i = 0; i < 3; i++)
+	for (int i = 0; i < 4; i++)
 	{
 		g_Device->CreateRenderTargetView(g_GBufferTEX[i], &renderTargetViewDesc, &g_GBufferRTV[i]);
 	}
@@ -426,7 +446,7 @@ bool Application::CreateGBuffer()
 	shaderResourceViewDesc.Texture2D.MipLevels = 1;
 	shaderResourceViewDesc.Texture2D.MostDetailedMip = 0;
 
-	for (int i = 0; i < 3; i++)
+	for (int i = 0; i < 4; i++)
 	{
 		g_Device->CreateShaderResourceView(g_GBufferTEX[i], &shaderResourceViewDesc, &g_GBufferSRV[i]);
 	}
