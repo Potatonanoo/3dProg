@@ -42,66 +42,97 @@ ID3D11SamplerState* Object::getSamplerState()
 
 void Object::createVertexBuffer(ID3D11Device* g_Device, string filename)
 {
-	VertexData triangleVertices[36] =
+	if (filename == "cube")
 	{
-		-0.5f, 0.5f, -0.5f,		0.f, 0.f,	0.f, 0.f, -1.f,
-		0.5f, 0.5f, -0.5f,		1.f, 0.f,	0.f, 0.f, -1.f,
-		-0.5f, -0.5f, -0.5f,	0.f, 1.f,	0.f, 0.f, -1.f,
-		0.5f, 0.5f, -0.5f,		1.f, 0.f,	0.f, 0.f, -1.f,
-		0.5f, -0.5f, -0.5f,		1.f, 1.f,	0.f, 0.f, -1.f,
-		-0.5f, -0.5f, -0.5f,	0.f, 1.f,	0.f, 0.f, -1.f,
+		VertexData triangleVertices[36] =
+		{
+			-0.5f, 0.5f, -0.5f,		0.f, 0.f,	0.f, 0.f, -1.f,
+			0.5f, 0.5f, -0.5f,		1.f, 0.f,	0.f, 0.f, -1.f,
+			-0.5f, -0.5f, -0.5f,	0.f, 1.f,	0.f, 0.f, -1.f,
+			0.5f, 0.5f, -0.5f,		1.f, 0.f,	0.f, 0.f, -1.f,
+			0.5f, -0.5f, -0.5f,		1.f, 1.f,	0.f, 0.f, -1.f,
+			-0.5f, -0.5f, -0.5f,	0.f, 1.f,	0.f, 0.f, -1.f,
 
-		-0.5f, -0.5f, 0.5f,		0.f, 1.f,	0.f, 0.f, 1.f,
-		0.5f, 0.5f, 0.5f,		1.f, 0.f,	0.f, 0.f, 1.f,
-		-0.5f, 0.5f, 0.5f,		0.f, 0.f,	0.f, 0.f, 1.f,
-		-0.5f, -0.5f, 0.5f,		0.f, 1.f,	0.f, 0.f, 1.f,
-		0.5f, -0.5f, 0.5f,		1.f, 1.f,	0.f, 0.f, 1.f,
-		0.5f, 0.5f, 0.5f,		1.f, 0.f,	0.f, 0.f, 1.f,
+			-0.5f, -0.5f, 0.5f,		0.f, 1.f,	0.f, 0.f, 1.f,
+			0.5f, 0.5f, 0.5f,		1.f, 0.f,	0.f, 0.f, 1.f,
+			-0.5f, 0.5f, 0.5f,		0.f, 0.f,	0.f, 0.f, 1.f,
+			-0.5f, -0.5f, 0.5f,		0.f, 1.f,	0.f, 0.f, 1.f,
+			0.5f, -0.5f, 0.5f,		1.f, 1.f,	0.f, 0.f, 1.f,
+			0.5f, 0.5f, 0.5f,		1.f, 0.f,	0.f, 0.f, 1.f,
 
-		0.5f, 0.5f, -0.5f,		0.f, 0.f,	1.f, 0.f, 0.f,
-		0.5f, 0.5f, 0.5f,		1.f, 0.f,	1.f, 0.f, 0.f,
-		0.5f, -0.5f, -0.5f,		0.f, 1.f,	1.f, 0.f, 0.f,
-		0.5f, 0.5f, 0.5f,		1.f, 0.f,	1.f, 0.f, 0.f,
-		0.5f, -0.5f, 0.5f,		1.f, 1.f,	1.f, 0.f, 0.f,
-		0.5f, -0.5f, -0.5f,		0.f, 1.f,	1.f, 0.f, 0.f,
+			0.5f, 0.5f, -0.5f,		0.f, 0.f,	1.f, 0.f, 0.f,
+			0.5f, 0.5f, 0.5f,		1.f, 0.f,	1.f, 0.f, 0.f,
+			0.5f, -0.5f, -0.5f,		0.f, 1.f,	1.f, 0.f, 0.f,
+			0.5f, 0.5f, 0.5f,		1.f, 0.f,	1.f, 0.f, 0.f,
+			0.5f, -0.5f, 0.5f,		1.f, 1.f,	1.f, 0.f, 0.f,
+			0.5f, -0.5f, -0.5f,		0.f, 1.f,	1.f, 0.f, 0.f,
 
-		-0.5f, -0.5f, -0.5f,	0.f, 1.f,	-1.f, 0.f, 0.f,
-		-0.5f, 0.5f, 0.5f,		1.f, 0.f,	-1.f, 0.f, 0.f,
-		-0.5f, 0.5f, -0.5f,		0.f, 0.f,	-1.f, 0.f, 0.f,
-		-0.5f, -0.5f, -0.5f,	0.f, 1.f,	-1.f, 0.f, 0.f,
-		-0.5f, -0.5f, 0.5f,		1.f, 1.f,	-1.f, 0.f, 0.f,
-		-0.5f, 0.5f, 0.5f,		1.f, 0.f,	-1.f, 0.f, 0.f,
+			-0.5f, -0.5f, -0.5f,	0.f, 1.f,	-1.f, 0.f, 0.f,
+			-0.5f, 0.5f, 0.5f,		1.f, 0.f,	-1.f, 0.f, 0.f,
+			-0.5f, 0.5f, -0.5f,		0.f, 0.f,	-1.f, 0.f, 0.f,
+			-0.5f, -0.5f, -0.5f,	0.f, 1.f,	-1.f, 0.f, 0.f,
+			-0.5f, -0.5f, 0.5f,		1.f, 1.f,	-1.f, 0.f, 0.f,
+			-0.5f, 0.5f, 0.5f,		1.f, 0.f,	-1.f, 0.f, 0.f,
 
-		-0.5f, 0.5f, 0.5f,		0.f, 0.f,	0.f, 1.f, 0.f,
-		0.5f, 0.5f, 0.5f,		1.f, 0.f,	0.f, 1.f, 0.f,
-		-0.5f, 0.5f, -0.5f,		0.f, 1.f,	0.f, 1.f, 0.f,
-		0.5f, 0.5f, 0.5f,		1.f, 0.f,	0.f, 1.f, 0.f,
-		0.5f, 0.5f, -0.5f,		1.f, 1.f,	0.f, 1.f, 0.f,
-		-0.5f, 0.5f, -0.5f,		0.f, 1.f,	0.f, 1.f, 0.f,
+			-0.5f, 0.5f, 0.5f,		0.f, 0.f,	0.f, 1.f, 0.f,
+			0.5f, 0.5f, 0.5f,		1.f, 0.f,	0.f, 1.f, 0.f,
+			-0.5f, 0.5f, -0.5f,		0.f, 1.f,	0.f, 1.f, 0.f,
+			0.5f, 0.5f, 0.5f,		1.f, 0.f,	0.f, 1.f, 0.f,
+			0.5f, 0.5f, -0.5f,		1.f, 1.f,	0.f, 1.f, 0.f,
+			-0.5f, 0.5f, -0.5f,		0.f, 1.f,	0.f, 1.f, 0.f,
 
-		-0.5f, -0.5f, -0.5f,	0.f, 1.f,	0.f, -1.f, 0.f,
-		0.5f, -0.5f, 0.5f,		1.f, 0.f,	0.f, -1.f, 0.f,
-		-0.5f, -0.5f, 0.5f,		0.f, 0.f,	0.f, -1.f, 0.f,
-		-0.5f, -0.5f, -0.5f,	0.f, 1.f,	0.f, -1.f, 0.f,
-		0.5f, -0.5f, -0.5f,		1.f, 1.f,	0.f, -1.f, 0.f,
-		0.5f, -0.5f, 0.5f,		1.f, 0.f,	0.f, -1.f, 0.f,
-		
-	};
+			-0.5f, -0.5f, -0.5f,	0.f, 1.f,	0.f, -1.f, 0.f,
+			0.5f, -0.5f, 0.5f,		1.f, 0.f,	0.f, -1.f, 0.f,
+			-0.5f, -0.5f, 0.5f,		0.f, 0.f,	0.f, -1.f, 0.f,
+			-0.5f, -0.5f, -0.5f,	0.f, 1.f,	0.f, -1.f, 0.f,
+			0.5f, -0.5f, -0.5f,		1.f, 1.f,	0.f, -1.f, 0.f,
+			0.5f, -0.5f, 0.5f,		1.f, 0.f,	0.f, -1.f, 0.f,
 
-	vertexCount = 36;
+		};
 
-	D3D11_BUFFER_DESC bufferDesc;
-	memset(&bufferDesc, 0, sizeof(bufferDesc));
-	bufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-	bufferDesc.Usage = D3D11_USAGE_DEFAULT;
-	bufferDesc.ByteWidth = sizeof(triangleVertices);
+		vertexCount = 36;
 
-	D3D11_SUBRESOURCE_DATA data;
-	data.pSysMem = triangleVertices;
-	g_Device->CreateBuffer(&bufferDesc, &data, &g_VertexBuffer);
+		D3D11_BUFFER_DESC bufferDesc;
+		memset(&bufferDesc, 0, sizeof(bufferDesc));
+		bufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+		bufferDesc.Usage = D3D11_USAGE_DEFAULT;
+		bufferDesc.ByteWidth = sizeof(triangleVertices);
 
-	vertexSize = sizeof(float) * 8; // x, y, z, u, v, nx, ny, nz
-	offset = 0;
+		D3D11_SUBRESOURCE_DATA data;
+		data.pSysMem = triangleVertices;
+		g_Device->CreateBuffer(&bufferDesc, &data, &g_VertexBuffer);
+
+		vertexSize = sizeof(float) * 8; // x, y, z, u, v, nx, ny, nz
+		offset = 0;
+	}
+	else
+	{
+		VertexData triangleVertices[6] =
+		{
+			-4.f, 0.f, 4.f,		0.f, 0.f,	0.f, 1.f, 0.f,
+			4.f, 0.f, 4.f,		1.f, 0.f,	0.f, 1.f, 0.f,
+			-4.f, 0.f, -4.f,		0.f, 1.f,	0.f, 1.f, 0.f,
+			4.f, 0.f, 4.f,		1.f, 0.f,	0.f, 1.f, 0.f,
+			4.f, 0.f, -4.f,		1.f, 1.f,	0.f, 1.f, 0.f,
+			-4.f, 0.f, -4.f,		0.f, 1.f,	0.f, 1.f, 0.f,
+		};
+
+		vertexCount = 6;
+
+		D3D11_BUFFER_DESC bufferDesc;
+		memset(&bufferDesc, 0, sizeof(bufferDesc));
+		bufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+		bufferDesc.Usage = D3D11_USAGE_DEFAULT;
+		bufferDesc.ByteWidth = sizeof(triangleVertices);
+
+		D3D11_SUBRESOURCE_DATA data;
+		data.pSysMem = triangleVertices;
+		g_Device->CreateBuffer(&bufferDesc, &data, &g_VertexBuffer);
+
+		vertexSize = sizeof(float) * 8; // x, y, z, u, v, nx, ny, nz
+		offset = 0;
+	}
+
 }
 
 void Object::createTexture(ID3D11Device* g_Device, wchar_t* filename)

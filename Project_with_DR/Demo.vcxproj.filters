@@ -47,6 +47,9 @@
     <FxCompile Include="Geometry.hlsl">
       <Filter>Source Files</Filter>
     </FxCompile>
+    <FxCompile Include="ShadowMapping.hlsl">
+      <Filter>Source Files</Filter>
+    </FxCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Application.h">

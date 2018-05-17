@@ -20,6 +20,7 @@ Application::Application(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lp
 
 	// Input matrix data
 	ObjData.WorldMatrix = XMMatrixIdentity();
+	ObjData.ViewMatrix = 
 	ObjData.ProjectionMatrix = XMMatrixPerspectiveFovLH(XM_PI*0.45f, (float)width / (float)height, 0.1f, 20.f);
 
 	g_hInstance = hInstance;
@@ -52,25 +53,28 @@ bool Application::Initialise()
 
 	obj = new Object*[NUM_OBJ];
 
-	obj[0] = new Object(g_Device, "filename1", L"brick.dds");
-	obj[0]->rotate(-0.2f, 0.f, 0.f);
-	obj[0]->translate(-1.2f, -0.6f, 0.f);
+	obj[0] = new Object(g_Device, "cube", L"brick.dds");
+	//obj[0]->rotate(-0.2f, 0.f, 0.f);
+	obj[0]->translate(-1.2f, 0.f, 0.f);
 
-	obj[1] = new Object(g_Device, "filename2", L"brick.dds");
-	obj[1]->rotate(0.f, 1.f, 0.f);
+	obj[1] = new Object(g_Device, "cube", L"brick.dds");
+	//obj[1]->rotate(0.f, 1.f, 0.f);
 	obj[1]->translate(2.f, 0.f, 1.f);
 
-	obj[2] = new Object(g_Device, "filename3", L"brick.dds");
-	obj[2]->rotate(0.f, 1.f, 0.f);
+	obj[2] = new Object(g_Device, "cube", L"brick.dds");
+	//obj[2]->rotate(0.f, 1.f, 0.f);
 	obj[2]->translate(0.f, 0.f, 4.f);
 
-	obj[3] = new Object(g_Device, "filename4", L"brick.dds");
-	obj[3]->rotate(0.f, 1.f, 0.f);
-	obj[3]->translate(1.2f, 2.f, 3.f);
+	obj[3] = new Object(g_Device, "cube", L"brick.dds");
+	//obj[3]->rotate(0.f, 1.f, 0.f);
+	obj[3]->translate(1.2f, 0.f, 3.f);
 
-	obj[4] = new Object(g_Device, "filename5", L"brick.dds");
-	obj[4]->rotate(0.f, 1.f, 0.f);
-	obj[4]->translate(-1.f, 2.f, 2.f);
+	obj[4] = new Object(g_Device, "cube", L"brick.dds");
+	//obj[4]->rotate(0.f, 1.f, 0.f);
+	obj[4]->translate(-1.f, 0.f, 2.f);
+
+	obj[5] = new Object(g_Device, "notcube", L"brick.dds");
+	obj[5]->translate(0.f, -1.f, 2.f);
 
 	camera = new Camera({ 0.f, 0.f, -2.f, 1.f }, { 0.f, 0.f, 1.f, 1.f }, { 0.f, 1.f, 0.f, 1.f });
 
@@ -80,6 +84,7 @@ bool Application::Initialise()
 	CreateQuadBuffer();
 	result = CreateConstantBuffer();
 	result = CreateGBuffer();
+	result = CreateShadowMap();
 
 	return result;
 }
@@ -161,7 +166,6 @@ void Application::Render()
 	g_DeviceContext->IASetInputLayout(g_VertexLayout);
 	
 	g_DeviceContext->PSSetShaderResources(0, 3, g_GBufferSRV);
-	//g_DeviceContext->PSSetSamplers(0, 1, &g_SamplerState);
 
 	g_DeviceContext->Draw(4, 0);
 
@@ -248,7 +252,7 @@ bool Application::CreateShaders()
 	ID3DBlob* error = nullptr;
 	HRESULT hr;
 
-	 hr = D3DCompileFromFile( L"Vertex.hlsl", nullptr, nullptr, "VS_main", "vs_5_0", 0, 0, &pVS, &error );
+	hr = D3DCompileFromFile( L"Vertex.hlsl", nullptr, nullptr, "VS_main", "vs_5_0", 0, 0, &pVS, &error );
 	if (FAILED(hr))
 		return false;
 
@@ -266,7 +270,6 @@ bool Application::CreateShaders()
 	if (FAILED(hr))
 		return false;
 
-	pVS->Release();
 
 	//---------- Deferred Vertex Shader ----------//
 
@@ -290,8 +293,6 @@ bool Application::CreateShaders()
 	if (FAILED(hr))
 		return false;
 
-	pVS->Release();
-
 	//---------- Geometry Shader ----------//
 
 	ID3DBlob* pGS = nullptr;
@@ -303,8 +304,6 @@ bool Application::CreateShaders()
 	hr = g_Device->CreateGeometryShader(pGS->GetBufferPointer(), pGS->GetBufferSize(), nullptr, &g_GeometryShader);
 	if (FAILED(hr))
 		return false;
-
-	pGS->Release();
 
 	//---------- Pixel Shader ----------//
 
@@ -332,8 +331,41 @@ bool Application::CreateShaders()
 	if (FAILED(hr))
 		return false;
 
-	pPS->Release();
+	//---------- ShadowMapping Vertex Shader ----------//
 
+	pVS = nullptr;
+	error = nullptr;
+	hr = D3DCompileFromFile(L"ShadowMapping.hlsl", nullptr, nullptr, "ShadowMapVS", "vs_5_0", 0, 0, &pVS, &error);
+	if (FAILED(hr))
+		return false;
+
+	hr = g_Device->CreateVertexShader(pVS->GetBufferPointer(), pVS->GetBufferSize(), nullptr, &g_ShadowMappingVertexShader);
+	if (FAILED(hr))
+		return false;
+	D3D11_INPUT_ELEMENT_DESC inputDesc3[] = {
+		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+	{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+	{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 }
+	};
+	hr = g_Device->CreateInputLayout(inputDesc3, ARRAYSIZE(inputDesc3), pVS->GetBufferPointer(), pVS->GetBufferSize(), &g_ShadowMappingVertexLayout);
+	if (FAILED(hr))
+		return false;
+
+	//---------- ShadowMapping Pixel Shader ----------//
+
+	pPS = nullptr;
+	error = nullptr;
+	hr = D3DCompileFromFile(L"ShadowMapping.hlsl", nullptr, nullptr, "ShadowMapPS", "ps_5_0", 0, 0, &pPS, &error);
+	if (FAILED(hr))
+		return false;
+	hr = g_Device->CreatePixelShader(pPS->GetBufferPointer(), pPS->GetBufferSize(), nullptr, &g_ShadowMappingPixelShader);
+	if (FAILED(hr))
+		return false;
+
+
+	pVS->Release();
+	pGS->Release();
+	pPS->Release();
 	return true;
 }
 
@@ -448,4 +480,37 @@ void Application::createSamplerState()
 	sampDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
 
 	g_Device->CreateSamplerState(&sampDesc, &g_SamplerState);
+}
+
+bool Application::CreateShadowMap()
+{
+	D3D11_TEXTURE2D_DESC shadowMapDesc;
+	shadowMapDesc.Width = (float)width;
+	shadowMapDesc.Height = (float)height;
+	shadowMapDesc.MipLevels = 1;
+	shadowMapDesc.ArraySize = 1;
+	shadowMapDesc.Format = DXGI_FORMAT_R32_TYPELESS;
+	shadowMapDesc.SampleDesc.Count = 1;
+	shadowMapDesc.SampleDesc.Quality = 0;
+	shadowMapDesc.Usage = D3D11_USAGE_DEFAULT;
+	shadowMapDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
+	shadowMapDesc.CPUAccessFlags = 0;
+	shadowMapDesc.MiscFlags = 0;
+
+	D3D11_DEPTH_STENCIL_VIEW_DESC depthStencilView;
+	depthStencilView.Format = shadowMapDesc.Format;
+	depthStencilView.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+	depthStencilView.Texture2D.MipSlice = 0;
+
+	D3D11_SHADER_RESOURCE_VIEW_DESC shaderResourceView;
+	shaderResourceView.Format = DXGI_FORMAT_R32_FLOAT;
+	shaderResourceView.ViewDimension = D3D10_SRV_DIMENSION_TEXTURE2D;
+	shaderResourceView.Texture2D.MipLevels = shadowMapDesc.MipLevels;
+	shaderResourceView.Texture2D.MostDetailedMip = 0;
+
+	g_Device->CreateTexture2D(&shadowMapDesc, NULL, &g_ShadowMapBuffer);
+	g_Device->CreateDepthStencilView(g_ShadowMapBuffer, &depthStencilView, &g_ShadowMapDepthView);
+	g_Device->CreateShaderResourceView(g_ShadowMapBuffer, &shaderResourceView, &g_ShadowMapSRV);
+
+	return true;
 }

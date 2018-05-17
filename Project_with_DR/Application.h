@@ -12,7 +12,7 @@
 
 using namespace DirectX;
 
-#define NUM_OBJ 5
+#define NUM_OBJ 6
 
 class Application
 {
@@ -42,6 +42,7 @@ private:
 	bool CreateConstantBuffer();
 	bool CreateGBuffer();
 	void CreateQuadBuffer();
+	bool CreateShadowMap();
 
 private:
 	Object** obj;
@@ -52,17 +53,15 @@ private:
 	ID3D11DeviceContext* g_DeviceContext;
 	ID3D11RenderTargetView* g_RenderTargetView;
 
-	// VertexBuffer behöver vara en array om vi ska ha mer än 1 object i scenen.
-	/*ID3D11Buffer* g_VertexBuffer;
-	ID3D11ShaderResourceView* g_ShaderResourceView;*/
 	ID3D11SamplerState* g_SamplerState;
 
+	// Normal Rendering
 	ID3D11InputLayout* g_VertexLayout;
-	ID3D11InputLayout* g_DeferredVertexLayout;
-
 	ID3D11VertexShader* g_VertexShader;
 	ID3D11PixelShader* g_PixelShader;
 
+	// Deferred Rendering
+	ID3D11InputLayout* g_DeferredVertexLayout;
 	ID3D11VertexShader* g_DeferredVertexShader;
 	ID3D11PixelShader* g_DeferredPixelShader;
 	ID3D11GeometryShader* g_GeometryShader;
@@ -72,8 +71,17 @@ private:
 	// Matrix data
 	ID3D11Buffer* g_ConstantBuffer;
 
+	// Depth Buffer
 	ID3D11DepthStencilView* g_DepthStencilView;
 	ID3D11Texture2D* g_DepthStencilBuffer;
+
+	// Shadow Mapping
+	ID3D11InputLayout* g_ShadowMappingVertexLayout;
+	ID3D11VertexShader* g_ShadowMappingVertexShader;
+	ID3D11PixelShader* g_ShadowMappingPixelShader;
+	ID3D11DepthStencilView* g_ShadowMapDepthView;
+	ID3D11Texture2D* g_ShadowMapBuffer;
+	ID3D11ShaderResourceView* g_ShadowMapSRV;
 
 	// G-Buffer
 	ID3D11Texture2D* g_GBufferTEX[3];
@@ -94,8 +102,6 @@ private:
 		float u, v;
 		float nx, ny, nz;
 	};
-
-	float objAngle = 0.0f;
 };
 
 #endif
