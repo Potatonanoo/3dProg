@@ -109,12 +109,12 @@ void Object::createVertexBuffer(ID3D11Device* g_Device, string filename)
 	{
 		VertexData triangleVertices[6] =
 		{
-			-4.f, 4.f, -0.5f,		0.f, 0.f,	0.f, 0.f, -1.f,
-			4.f, 4.f, -0.5f,		1.f, 0.f,	0.f, 0.f, -1.f,
-			-4.f, -4.f, -0.5f,	0.f, 1.f,	0.f, 0.f, -1.f,
-			4.f, 4.f, -0.5f,		1.f, 0.f,	0.f, 0.f, -1.f,
-			4.f, -4.f, -0.5f,		1.f, 1.f,	0.f, 0.f, -1.f,
-			-4.f, -4.f, -0.5f,	0.f, 1.f,	0.f, 0.f, -1.f,
+			-20.f, 14.f, -0.5f,		0.f, 0.f,	0.f, 0.f, -1.f,
+			20.f, 14.f, -0.5f,		1.f, 0.f,	0.f, 0.f, -1.f,
+			-20.f, -14.f, -0.5f,	0.f, 1.f,	0.f, 0.f, -1.f,
+			20.f, 14.f, -0.5f,		1.f, 0.f,	0.f, 0.f, -1.f,
+			20.f, -14.f, -0.5f,		1.f, 1.f,	0.f, 0.f, -1.f,
+			-20.f, -14.f, -0.5f,	0.f, 1.f,	0.f, 0.f, -1.f,
 		};
 
 		vertexCount = 6;
@@ -142,9 +142,9 @@ void Object::createTexture(ID3D11Device* g_Device, wchar_t* filename)
 
 	D3D11_SAMPLER_DESC sampDesc = {};
 	sampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
-	sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
-	sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
-	sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+	sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+	sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+	sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
 	sampDesc.MipLODBias = 0;
 	sampDesc.MaxAnisotropy = 1;
 	sampDesc.MinLOD = 0;
