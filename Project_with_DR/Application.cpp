@@ -14,8 +14,6 @@ Application::Application(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lp
 	g_PixelShader = nullptr;
 	g_DefPixelShader = nullptr;
 	g_GeometryShader = nullptr;
-	g_PixelShaderTexture = nullptr;
-	g_PixelShaderEverything = nullptr;
 	g_DepthStencilView = nullptr;
 	g_DepthStencilBuffer = nullptr;
 
