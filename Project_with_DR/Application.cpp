@@ -1,5 +1,4 @@
 #include "Application.h"
-#include "bth_image.h"
 
 Application::Application(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int nCmdShow, HWND wndHandle, int width, int height)
 {
@@ -7,28 +6,22 @@ Application::Application(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lp
 	g_Device = nullptr;
 	g_DeviceContext = nullptr;
 	g_RenderTargetView = nullptr;
-	g_VertexBuffer = nullptr;
-	g_QuadBuffer = nullptr;
 	g_VertexLayout = nullptr;
 	g_DeferredVertexLayout = nullptr;
 	g_VertexShader = nullptr;
-	g_DeferredVertexShader = nullptr;
 	g_PixelShader = nullptr;
-	g_DeferredPixelShader = nullptr;
 	g_GeometryShader = nullptr;
-	g_ConstantBuffer = nullptr;
 	g_DepthStencilView = nullptr;
 	g_DepthStencilBuffer = nullptr;
-	g_ShaderResourceView = nullptr;
-	g_SamplerState = nullptr;
 
 	this->width = width;
 	this->height = height;
 
 	// Input matrix data
 	ObjData.WorldMatrix = XMMatrixIdentity();
-	ObjData.ViewMatrix = XMMatrixLookAtLH({ 0.f, 0.f, -2.f }, { 0.f, 0.f, 0.f }, { 0.f, 1.f, 0.f });
-	ObjData.ProjectionMatrix = XMMatrixPerspectiveFovLH(XM_PI*0.45f, (float)width / (float)height, 0.1f, 20.f);
+	ObjData.ProjectionMatrix = XMMatrixPerspectiveFovLH(XM_PI*0.45f, (float)width / (float)height, 0.1f, 100.f);
+	ObjData.LightViewMatrix = XMMatrixLookAtLH({ 0.f, 0.f, -5.f }, { 0.f, 0.f, 1.f }, { 0.f, 1.f, 0.f });
+	ObjData.LightProjectionMatrix = XMMatrixPerspectiveFovLH(XM_PI*0.45f, 500.f / 500.f, 0.1f, 50.f);
 
 	g_hInstance = hInstance;
 	g_hPrevInstance = hPrevInstance;
@@ -58,13 +51,41 @@ bool Application::Initialise()
 	if (FAILED(hr))
 		result = false;
 
+	obj = new Object*[NUM_OBJ];
+
+	obj[0] = new Object(g_Device, "cube", L"brick.dds");
+	//obj[0]->rotate(-0.2f, 0.f, 0.f);
+	obj[0]->translate(-2.5f, 0.f, 0.f);
+
+	obj[1] = new Object(g_Device, "cube", L"brick.dds");
+	//obj[1]->rotate(0.f, 1.f, 0.f);
+	obj[1]->translate(2.f, 2.f, 1.f);
+
+	obj[2] = new Object(g_Device, "cube", L"brick.dds");
+	//obj[2]->rotate(0.f, 1.f, 0.f);
+	obj[2]->translate(0.f, 5.f, 4.f);
+
+	obj[3] = new Object(g_Device, "cube", L"brick.dds");
+	//obj[3]->rotate(0.f, 1.f, 0.f);
+	obj[3]->translate(1.2f, -2.f, 3.f);
+
+	obj[4] = new Object(g_Device, "cube", L"brick.dds");
+	//obj[4]->rotate(0.f, 1.f, 0.f);
+	obj[4]->translate(-1.f, -1.f, 2.f);
+
+	obj[5] = new Object(g_Device, "notcube", L"brick.dds");
+	obj[5]->translate(0.f, 0.f, 8.f);
+
+	camera = new Camera({ 0.f, 0.f, -5.f, 1.f }, { 0.f, 0.f, 1.f, 1.f }, { 0.f, 1.f, 0.f, 1.f });
+
 	result = CreateDepthBuffer();
 	SetViewport();
 	result = CreateShaders();
-	CreateVertexBuffer();
-	CreateTexture();
+	CreateQuadBuffer();
 	result = CreateConstantBuffer();
 	result = CreateGBuffer();
+	createSamplerState();
+	result = CreateShadowMap();
 
 	return result;
 }
@@ -72,57 +93,94 @@ bool Application::Initialise()
 /* [Uppdaterar allt i våran scen. (Rotation, rörelser, osv)] */
 bool Application::Update(float dt)
 {
-	objAngle += (SPEED * dt);
-	ObjData.WorldMatrix = XMMatrixRotationY(objAngle);
-
+	camera->update(dt);
 	return true;
 }
 
-/* [Renderar våran scen i 3 steg. 
-1: Kopplar våran gBuffer som RenderTarget och sätter rätt InputLayout till VertexShadern. 
-2: Skapar våran pipeline och ritar ut scenen till våran gBuffer.
-3: Byter RenderTarget till våran backBuffer igen och ritar ut. (data från gBuffern hämtas ut i PixelShader)] */
 void Application::Render()
 {
+	UINT vertexSize = sizeof(float) * 8; // x, y, z, u, v, nx, ny, nz
+	UINT offset = 0;
+	UINT vertexCount = 0;
+
 	float color[4]{ 0.f, 0.f, 1.f, 1.f };
 	g_DeviceContext->ClearRenderTargetView(g_RenderTargetView, color);
-
-	for (int i = 0; i < 3; i++)
+	g_DeviceContext->ClearRenderTargetView(g_SM_RTV, color);
+	for (int i = 0; i < 4; i++)
 		g_DeviceContext->ClearRenderTargetView(g_GBufferRTV[i], color);
 
 	g_DeviceContext->ClearDepthStencilView(g_DepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+	g_DeviceContext->ClearDepthStencilView(g_SM_DSV, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
-	// Preperation for first draw call
-	g_DeviceContext->OMSetRenderTargets(3, g_GBufferRTV, g_DepthStencilView);
+	//** SHADOW MAPPING **//
+	g_DeviceContext->OMSetRenderTargets(1, &g_SM_RTV, g_SM_DSV);
+	SetShadowMapViewport();
 
-	g_DeviceContext->IASetInputLayout(g_DeferredVertexLayout);
+	g_DeviceContext->IASetInputLayout(g_SM_VertexLayout);
 	g_DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-	D3D11_MAPPED_SUBRESOURCE dataPtr;
-	g_DeviceContext->Map(g_ConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &dataPtr);
-	memcpy(dataPtr.pData, &ObjData, sizeof(ConstantBuffer));
-	g_DeviceContext->Unmap(g_ConstantBuffer, 0);
+	for (int i = 0; i < NUM_OBJ; i++)
+	{
+		//Get the World Matrix from the obj class
+		ObjData.WorldMatrix = obj[i]->getWorldMatrix();
 
-	UINT vertexSize = sizeof(float) * 8; // x, y, z, u, v, nx, ny, nz
-	UINT offset = 0;
-	g_DeviceContext->IASetVertexBuffers(0, 1, &g_VertexBuffer, &vertexSize, &offset);
+		D3D11_MAPPED_SUBRESOURCE dataPtr;
+		g_DeviceContext->Map(g_ConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &dataPtr);
+		memcpy(dataPtr.pData, &ObjData, sizeof(ConstantBuffer));
+		g_DeviceContext->Unmap(g_ConstantBuffer, 0);
 
-	g_DeviceContext->VSSetShader(g_DeferredVertexShader, nullptr, 0);
-	g_DeviceContext->GSSetShader(g_GeometryShader, nullptr, 0);
-	g_DeviceContext->PSSetShader(g_DeferredPixelShader, nullptr, 0);
-	g_DeviceContext->HSSetShader(nullptr, nullptr, 0);
-	g_DeviceContext->DSSetShader(nullptr, nullptr, 0);
+		obj[i]->setVertexBuffer(g_DeviceContext);
 
-	g_DeviceContext->GSSetConstantBuffers(0, 1, &g_ConstantBuffer);
+		g_DeviceContext->VSSetShader(g_SM_VertexShader, nullptr, 0);
+		g_DeviceContext->GSSetShader(nullptr, nullptr, 0);
+		g_DeviceContext->PSSetShader(g_SM_PixelShader , nullptr, 0);
+		g_DeviceContext->HSSetShader(nullptr, nullptr, 0);
+		g_DeviceContext->DSSetShader(nullptr, nullptr, 0);
 
-	g_DeviceContext->PSSetShaderResources(0, 1, &g_ShaderResourceView);
-	g_DeviceContext->PSSetSamplers(0, 1, &g_SamplerState);
+		g_DeviceContext->VSSetConstantBuffers(0, 1, &g_ConstantBuffer);
 
-	g_DeviceContext->Draw(6, 0);
+		vertexCount = obj[i]->getVertexCount();
 
-	// Screen Quad
+		g_DeviceContext->Draw(vertexCount, 0);
+	}
+
+
+	//** DEFERRED RENDERING **//
+
+	// Preperation for deferred draw call
+	g_DeviceContext->OMSetRenderTargets(4, g_GBufferRTV, g_DepthStencilView);
+	g_DeviceContext->IASetInputLayout(g_DeferredVertexLayout);
+	SetViewport();
+
+
+	for (int i = 0; i < NUM_OBJ; i++)
+	{
+		//Get the World Matrix from the obj class
+		ObjData.WorldMatrix = obj[i]->getWorldMatrix();
+		ObjData.ViewMatrix = camera->getViewMatrix();
+
+		D3D11_MAPPED_SUBRESOURCE dataPtr;
+		g_DeviceContext->Map(g_ConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &dataPtr);
+		memcpy(dataPtr.pData, &ObjData, sizeof(ConstantBuffer));
+		g_DeviceContext->Unmap(g_ConstantBuffer, 0);
+
+		obj[i]->setVertexBuffer(g_DeviceContext);
+		obj[i]->setShaderResourceView(g_DeviceContext); // Texture
+		obj[i]->setSamplerState(g_DeviceContext);
+		g_DeviceContext->GSSetConstantBuffers(0, 1, &g_ConstantBuffer);
+
+		g_DeviceContext->VSSetShader(g_DeferredVertexShader, nullptr, 0);
+		g_DeviceContext->GSSetShader(g_GeometryShader, nullptr, 0);
+		g_DeviceContext->PSSetShader(g_DeferredPixelShader, nullptr, 0);
+		g_DeviceContext->HSSetShader(nullptr, nullptr, 0);
+		g_DeviceContext->DSSetShader(nullptr, nullptr, 0);
+
+		vertexCount = obj[i]->getVertexCount();
+		g_DeviceContext->Draw(vertexCount, 0);
+	}
+
+	//** NORMAL RENDERING **//
 	g_DeviceContext->OMSetRenderTargets(1, &g_RenderTargetView, NULL);
-	
 
 	vertexSize = sizeof(float) * 8; // x, y, z, u, v, nx, ny, nz
 	g_DeviceContext->IASetVertexBuffers(0, 1, &g_QuadBuffer, &vertexSize, &offset);
@@ -136,15 +194,18 @@ void Application::Render()
 	g_DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 	g_DeviceContext->IASetInputLayout(g_VertexLayout);
 	
-	g_DeviceContext->PSSetShaderResources(0, 3, g_GBufferSRV);
-	g_DeviceContext->PSSetSamplers(0, 1, &g_SamplerState);
+	g_DeviceContext->PSSetShaderResources(0, 1, &g_GBufferSRV[0]);
+	g_DeviceContext->PSSetShaderResources(1, 1, &g_GBufferSRV[1]);
+	g_DeviceContext->PSSetShaderResources(2, 1, &g_GBufferSRV[2]);
+	g_DeviceContext->PSSetShaderResources(3, 1, &g_GBufferSRV[3]);
+	g_DeviceContext->PSSetShaderResources(4, 1, &g_SM_SRV);
+
+	g_DeviceContext->PSSetSamplers(0, 1, &g_SampleStateWrap);
+	g_DeviceContext->PSSetSamplers(1, 1, &g_SampleStateClamp); // For Shadow Mapping
 
 	g_DeviceContext->Draw(4, 0);
 
 	g_SwapChain->Present(0, 0);
-
-	ID3D11ShaderResourceView* clear[] = { nullptr, nullptr, nullptr };
-	g_DeviceContext->PSSetShaderResources(0, 3, clear);
 }
 
 /* [Skapar g_Device, g_DeviceContext, g_SwapChain, g_RenderTargetView (backbufferRTV)] */
@@ -215,6 +276,18 @@ void Application::SetViewport()
 	g_DeviceContext->RSSetViewports(1, &vp);
 }
 
+void Application::SetShadowMapViewport()
+{
+	D3D11_VIEWPORT vp;
+	vp.Width = 500.f;
+	vp.Height = 500.f;
+	vp.MinDepth = 0.0f;
+	vp.MaxDepth = 1.0f;
+	vp.TopLeftX = 0;
+	vp.TopLeftY = 0;
+	g_DeviceContext->RSSetViewports(1, &vp);
+}
+
 /* [Skapar våra shaders VertexShader(behövs denna?), DeferredVertexShader, GeometryShader, PixelShader, DeferredPixelShader] */
 bool Application::CreateShaders()
 {
@@ -224,7 +297,7 @@ bool Application::CreateShaders()
 	ID3DBlob* error = nullptr;
 	HRESULT hr;
 
-	 hr = D3DCompileFromFile( L"Vertex.hlsl", nullptr, nullptr, "VS_main", "vs_5_0", 0, 0, &pVS, &error );
+	hr = D3DCompileFromFile( L"Vertex.hlsl", nullptr, nullptr, "VS_main", "vs_5_0", 0, 0, &pVS, &error );
 	if (FAILED(hr))
 		return false;
 
@@ -242,7 +315,6 @@ bool Application::CreateShaders()
 	if (FAILED(hr))
 		return false;
 
-	pVS->Release();
 
 	//---------- Deferred Vertex Shader ----------//
 
@@ -266,8 +338,6 @@ bool Application::CreateShaders()
 	if (FAILED(hr))
 		return false;
 
-	pVS->Release();
-
 	//---------- Geometry Shader ----------//
 
 	ID3DBlob* pGS = nullptr;
@@ -279,8 +349,6 @@ bool Application::CreateShaders()
 	hr = g_Device->CreateGeometryShader(pGS->GetBufferPointer(), pGS->GetBufferSize(), nullptr, &g_GeometryShader);
 	if (FAILED(hr))
 		return false;
-
-	pGS->Release();
 
 	//---------- Pixel Shader ----------//
 
@@ -308,8 +376,42 @@ bool Application::CreateShaders()
 	if (FAILED(hr))
 		return false;
 
-	pPS->Release();
+	//---------- ShadowMapping Vertex Shader ----------//
 
+	pVS = nullptr;
+	error = nullptr;
+	hr = D3DCompileFromFile(L"ShadowMappingVS.hlsl", nullptr, nullptr, "ShadowMapVS", "vs_5_0", 0, 0, &pVS, &error);
+	if (FAILED(hr))
+		return false;
+
+	hr = g_Device->CreateVertexShader(pVS->GetBufferPointer(), pVS->GetBufferSize(), nullptr, &g_SM_VertexShader);
+	if (FAILED(hr))
+		return false;
+	D3D11_INPUT_ELEMENT_DESC inputDesc3[] = {
+		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+	{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+	{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 }
+	};
+	hr = g_Device->CreateInputLayout(inputDesc3, ARRAYSIZE(inputDesc3), pVS->GetBufferPointer(), pVS->GetBufferSize(), &g_SM_VertexLayout);
+	if (FAILED(hr))
+		return false;
+
+	//---------- ShadowMapping Pixel Shader ----------//
+
+	pPS = nullptr;
+	error = nullptr;
+	hr = D3DCompileFromFile(L"ShadowMappingPS.hlsl", nullptr, nullptr, "ShadowMapPS", "ps_5_0", 0, 0, &pPS, &error);
+	if (FAILED(hr))
+		return false;
+
+	hr = g_Device->CreatePixelShader(pPS->GetBufferPointer(), pPS->GetBufferSize(), nullptr, &g_SM_PixelShader);
+
+	if (FAILED(hr))
+		return false;
+
+	pVS->Release();
+	pGS->Release();
+	pPS->Release();
 	return true;
 }
 
@@ -347,7 +449,7 @@ bool Application::CreateGBuffer()
 	textureDesc.MiscFlags = 0;
 	textureDesc.CPUAccessFlags = 0;
 
-	for (int i = 0; i < 3; i++)
+	for (int i = 0; i < 4; i++)
 	{
 		g_Device->CreateTexture2D(&textureDesc, NULL, &g_GBufferTEX[i]);
 	}
@@ -358,7 +460,7 @@ bool Application::CreateGBuffer()
 	renderTargetViewDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
 	renderTargetViewDesc.Texture2D.MipSlice = 0;
 
-	for (int i = 0; i < 3; i++)
+	for (int i = 0; i < 4; i++)
 	{
 		g_Device->CreateRenderTargetView(g_GBufferTEX[i], &renderTargetViewDesc, &g_GBufferRTV[i]);
 	}
@@ -370,7 +472,7 @@ bool Application::CreateGBuffer()
 	shaderResourceViewDesc.Texture2D.MipLevels = 1;
 	shaderResourceViewDesc.Texture2D.MostDetailedMip = 0;
 
-	for (int i = 0; i < 3; i++)
+	for (int i = 0; i < 4; i++)
 	{
 		g_Device->CreateShaderResourceView(g_GBufferTEX[i], &shaderResourceViewDesc, &g_GBufferSRV[i]);
 	}
@@ -378,86 +480,8 @@ bool Application::CreateGBuffer()
 	return true;
 }
 
-/* [Skapar våran texture med BTH_IMAGE.H] */
-void Application::CreateTexture()
-{
-	ID3D11Texture2D* texture;
-
-	D3D11_TEXTURE2D_DESC texDesc = { 0 };
-	texDesc.Width = BTH_IMAGE_WIDTH;
-	texDesc.Height = BTH_IMAGE_HEIGHT;
-	texDesc.MipLevels = 1;
-	texDesc.ArraySize = 1;
-	texDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-	texDesc.SampleDesc.Count = 1;
-	texDesc.Usage = D3D11_USAGE_DEFAULT;
-	texDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-	texDesc.CPUAccessFlags = 0;
-	texDesc.MiscFlags = 0;
-
-	// Data from the image
-	D3D11_SUBRESOURCE_DATA subData;
-	subData.pSysMem = &BTH_IMAGE_DATA;
-	subData.SysMemPitch = sizeof(char) * 4 * BTH_IMAGE_WIDTH;
-	subData.SysMemSlicePitch = sizeof(char) * 4 * BTH_IMAGE_WIDTH * BTH_IMAGE_HEIGHT;
-
-	g_Device->CreateTexture2D(&texDesc, &subData, &texture);
-	g_Device->CreateShaderResourceView(texture, NULL, &g_ShaderResourceView);
-
-	// Texture sampling
-	D3D11_SAMPLER_DESC sampDesc = {};
-	sampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
-	sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
-	sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
-	sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
-	sampDesc.MipLODBias = 0;
-	sampDesc.MaxAnisotropy = 1;
-	sampDesc.MinLOD = 0;
-	sampDesc.MaxLOD = D3D11_FLOAT32_MAX;
-	sampDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
-
-	g_Device->CreateSamplerState(&sampDesc, &g_SamplerState);
-}
-
-void Application::CreateVertexBuffer()
-{
-	VertexData triangleVertices[6] =
-	{
-		-0.5f, 0.5f, 0.0f,	// v0
-		0.f, 0.f,			// q0
-		0.f, 0.f, -1.f,
-		
-		0.5f, 0.5f, 0.0f,	// v1
-		1.f, 0.f,			// q1
-		0.f, 0.f, -1.f,
-		
-		-0.5f, -0.5f, 0.0f,	// v2
-		0.f, 1.f,			// q2
-		0.f, 0.f, -1.f,
-		
-		0.5f, 0.5f, 0.0f,	// v1
-		1.f, 0.f,			// q1
-		0.f, 0.f, -1.f,
-		
-		0.5f, -0.5f, 0.0f,	// v3
-		1.f, 1.f,			// q3
-		0.f, 0.f, -1.f,
-		
-		-0.5f, -0.5f, 0.0f,	// v4
-		0.f, 1.f,			// q4
-		0.f, 0.f, -1.f,
-	};
-		
-	D3D11_BUFFER_DESC bufferDesc;
-	memset(&bufferDesc, 0, sizeof(bufferDesc));
-	bufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-	bufferDesc.Usage = D3D11_USAGE_DEFAULT;
-	bufferDesc.ByteWidth = sizeof(triangleVertices);
-		
-	D3D11_SUBRESOURCE_DATA data;
-	data.pSysMem = triangleVertices;
-	g_Device->CreateBuffer(&bufferDesc, &data, &g_VertexBuffer);
-
+void Application::CreateQuadBuffer()
+{	
 	VertexData quadVertices[6] =
 	{
 		-1.f, 1.f, 0.f,	// v0
@@ -476,8 +500,91 @@ void Application::CreateVertexBuffer()
 		1.f, 1.f,			// q3
 		0.f, 0.f, -1.f,
 	};
-	bufferDesc.ByteWidth = sizeof(triangleVertices);
 
+	D3D11_BUFFER_DESC bufferDesc;
+	memset(&bufferDesc, 0, sizeof(bufferDesc));
+	bufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+	bufferDesc.Usage = D3D11_USAGE_DEFAULT;
+	bufferDesc.ByteWidth = sizeof(quadVertices);
+
+	D3D11_SUBRESOURCE_DATA data;
 	data.pSysMem = quadVertices;
 	g_Device->CreateBuffer(&bufferDesc, &data, &g_QuadBuffer);
+}
+
+void Application::createSamplerState()
+{
+	D3D11_SAMPLER_DESC sampDesc = {};
+	sampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+	sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+	sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+	sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+	sampDesc.MipLODBias = 0;
+	sampDesc.MaxAnisotropy = 1;
+	sampDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
+	sampDesc.MinLOD = 0;
+	sampDesc.MaxLOD = D3D11_FLOAT32_MAX;
+
+	g_Device->CreateSamplerState(&sampDesc, &g_SampleStateWrap);
+
+	sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+	sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+	sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+
+	g_Device->CreateSamplerState(&sampDesc, &g_SampleStateClamp);
+}
+
+bool Application::CreateShadowMap()
+{
+	D3D11_TEXTURE2D_DESC textureDesc;
+	ZeroMemory(&textureDesc, sizeof(textureDesc));
+	textureDesc.Width = 500.f;
+	textureDesc.Height = 500.f;
+	textureDesc.MipLevels = 1;
+	textureDesc.ArraySize = 1;
+	textureDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+	textureDesc.SampleDesc.Count = 1;
+	textureDesc.SampleDesc.Quality = 0;
+	textureDesc.Usage = D3D11_USAGE_DEFAULT;
+	textureDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+	textureDesc.CPUAccessFlags = 0;
+	textureDesc.MiscFlags = 0;
+	g_Device->CreateTexture2D(&textureDesc, NULL, &g_SM_RTTexture);
+
+	D3D11_RENDER_TARGET_VIEW_DESC rtvDesc;
+	rtvDesc.Format = textureDesc.Format;
+	rtvDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
+	rtvDesc.Texture2D.MipSlice = 0;
+	g_Device->CreateRenderTargetView(g_SM_RTTexture, &rtvDesc, &g_SM_RTV);
+
+	D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
+	srvDesc.Format = textureDesc.Format;
+	srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+	srvDesc.Texture2D.MostDetailedMip = 0;
+	srvDesc.Texture2D.MipLevels = 1;
+	g_Device->CreateShaderResourceView(g_SM_RTTexture, &srvDesc, &g_SM_SRV);
+
+
+	D3D11_TEXTURE2D_DESC depthBufferDesc;
+	depthBufferDesc.Width = 500.f;
+	depthBufferDesc.Height = 500.f;
+	depthBufferDesc.MipLevels = 1;
+	depthBufferDesc.ArraySize = 1;
+	depthBufferDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+	depthBufferDesc.SampleDesc.Count = 1;
+	depthBufferDesc.SampleDesc.Quality = 0;
+	depthBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+	depthBufferDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+	depthBufferDesc.CPUAccessFlags = 0;
+	depthBufferDesc.MiscFlags = 0;
+
+	HRESULT hr = g_Device->CreateTexture2D(&depthBufferDesc, nullptr, &g_SM_DSTexture);
+	if (FAILED(hr))
+		return false;
+
+	hr = g_Device->CreateDepthStencilView(g_SM_DSTexture, nullptr, &g_SM_DSV);
+	if (FAILED(hr))
+		return false;
+
+	return true;
 }
