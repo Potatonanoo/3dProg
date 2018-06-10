@@ -102,6 +102,7 @@
     <ClCompile Include="DDSTextureLoader.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Terrain.cpp" />
+    <ClCompile Include="TerrVertex.cpp" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="DefPixel.hlsl">
@@ -174,6 +175,7 @@
     <ClInclude Include="bth_image.h" />
     <ClInclude Include="DDSTextureLoader.h" />
     <ClInclude Include="Terrain.h" />
+    <ClInclude Include="TerrVertex.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

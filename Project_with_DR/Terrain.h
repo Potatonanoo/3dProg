@@ -3,7 +3,7 @@
 //#include <d3dcompiler.h>
 #include <DirectXMath.h>
 #include <vector>
-//#include <fstream>
+#include <fstream>
 
 class Terrain
 {
@@ -37,11 +37,11 @@ private:
 	bool inBounds(int i, int j);
 	float Average(int i, int j);
 
+	void LoadHeightmap();
 	void Smooth();
 	void BuildQuadPatchVB(ID3D11Device* device); // vertex buffer
 	void BuildQuadPatchIB(ID3D11Device* device); // index buffer
 	void BuildHeightMapSRV(ID3D11Device* device);
-	void loadHeight();
 	
 	static const int CellsPerPatch = 64;
 	int NumbPatchVertRows;
