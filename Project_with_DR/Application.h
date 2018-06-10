@@ -57,7 +57,6 @@ private:
 	ID3D11SamplerState* g_SampleStateWrap;
 	ID3D11SamplerState* g_SampleStateClamp;
 
-
 	// Normal Rendering
 	ID3D11InputLayout* g_VertexLayout;
 	ID3D11VertexShader* g_VertexShader;
