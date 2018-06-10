@@ -6,11 +6,16 @@ Application::Application(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lp
 	g_Device = nullptr;
 	g_DeviceContext = nullptr;
 	g_RenderTargetView = nullptr;
+	g_VertexBuffer = nullptr;
 	g_VertexLayout = nullptr;
 	g_DeferredVertexLayout = nullptr;
 	g_VertexShader = nullptr;
+	g_DefVertexShader = nullptr;
 	g_PixelShader = nullptr;
+	g_DefPixelShader = nullptr;
 	g_GeometryShader = nullptr;
+	g_PixelShaderTexture = nullptr;
+	g_PixelShaderEverything = nullptr;
 	g_DepthStencilView = nullptr;
 	g_DepthStencilBuffer = nullptr;
 
@@ -105,8 +110,7 @@ void Application::Render()
 
 	float color[4]{ 0.f, 0.f, 1.f, 1.f };
 	g_DeviceContext->ClearRenderTargetView(g_RenderTargetView, color);
-	g_DeviceContext->ClearRenderTargetView(g_SM_RTV, color);
-	for (int i = 0; i < 4; i++)
+	for (int i = 0; i < 3; i++)
 		g_DeviceContext->ClearRenderTargetView(g_GBufferRTV[i], color);
 
 	g_DeviceContext->ClearDepthStencilView(g_DepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
