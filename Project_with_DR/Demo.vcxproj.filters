@@ -13,6 +13,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Source Files\TerrainShaders">
+      <UniqueIdentifier>{689c6ba9-8184-4b57-b235-28ed0c9bce50}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -58,6 +61,15 @@
     </FxCompile>
     <FxCompile Include="ShadowMappingPS.hlsl">
       <Filter>Source Files</Filter>
+    </FxCompile>
+    <FxCompile Include="TerrainVertex.hlsl">
+      <Filter>Source Files\TerrainShaders</Filter>
+    </FxCompile>
+    <FxCompile Include="TerrainPixel.hlsl">
+      <Filter>Source Files\TerrainShaders</Filter>
+    </FxCompile>
+    <FxCompile Include="TerrainGeometry.hlsl">
+      <Filter>Source Files\TerrainShaders</Filter>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
