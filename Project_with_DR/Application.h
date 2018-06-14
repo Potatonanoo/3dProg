@@ -9,6 +9,7 @@
 #include "DDSTextureLoader.h"
 #include "Object.h"
 #include "Camera.h"
+#include "Terrain.h"
 
 using namespace DirectX;
 
@@ -40,6 +41,7 @@ private:
 	void SetViewport();
 	void SetShadowMapViewport();
 	bool CreateShaders();
+	bool CreateTerrainShader();
 	bool CreateConstantBuffer();
 	bool CreateGBuffer();
 	void CreateQuadBuffer();
@@ -48,6 +50,7 @@ private:
 private:
 	Object** obj;
 	Camera* camera;
+	Terrain terrain;
 
 	IDXGISwapChain*	g_SwapChain;
 	ID3D11Device* g_Device;
@@ -61,6 +64,16 @@ private:
 	ID3D11InputLayout* g_VertexLayout;
 	ID3D11VertexShader* g_VertexShader;
 	ID3D11PixelShader* g_PixelShader;
+
+	// Terraing Rendering
+	ID3D11Buffer* g_TerrainBuffer;
+
+	ID3D11InputLayout* g_TerrainVertexLayout;
+	ID3D11VertexShader* g_TerrainVertexShader;
+	ID3D11GeometryShader* g_TerrainGeometryShader;
+	ID3D11PixelShader* g_TerrainPixelShader;
+
+	ID3D11ShaderResourceView* g_TerrainResource;
 
 	// Deferred Rendering
 	ID3D11InputLayout* g_DeferredVertexLayout;
@@ -90,9 +103,9 @@ private:
 	ID3D11Texture2D*			g_SM_DSTexture;
 
 	// G-Buffer
-	ID3D11Texture2D* g_GBufferTEX[4];
-	ID3D11RenderTargetView* g_GBufferRTV[4];
-	ID3D11ShaderResourceView* g_GBufferSRV[4];
+	ID3D11Texture2D* g_GBufferTEX[5];
+	ID3D11RenderTargetView* g_GBufferRTV[5];
+	ID3D11ShaderResourceView* g_GBufferSRV[5];
 
 	struct ConstantBuffer
 	{

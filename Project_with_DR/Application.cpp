@@ -14,6 +14,11 @@ Application::Application(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lp
 	g_DepthStencilView = nullptr;
 	g_DepthStencilBuffer = nullptr;
 
+	g_TerrainVertexLayout = nullptr;
+	g_TerrainVertexShader = nullptr;
+	g_TerrainGeometryShader = nullptr;
+	g_TerrainPixelShader = nullptr;
+
 	this->width = width;
 	this->height = height;
 
@@ -76,6 +81,9 @@ bool Application::Initialise()
 	obj[5] = new Object(g_Device, "notcube", L"brick.dds");
 	obj[5]->translate(0.f, 0.f, 8.f);
 
+	obj[6] = new Object(g_Device, "terrain", L"Textures\\terrain_test.raw");
+	obj[6]->translate(0.f, -3.f, 0.f);
+
 	camera = new Camera({ 0.f, 0.f, -5.f, 1.f }, { 0.f, 0.f, 1.f, 1.f }, { 0.f, 1.f, 0.f, 1.f });
 
 	result = CreateDepthBuffer();
@@ -106,7 +114,7 @@ void Application::Render()
 	float color[4]{ 0.f, 0.f, 1.f, 1.f };
 	g_DeviceContext->ClearRenderTargetView(g_RenderTargetView, color);
 	g_DeviceContext->ClearRenderTargetView(g_SM_RTV, color);
-	for (int i = 0; i < 4; i++)
+	for (int i = 0; i < 5; i++)
 		g_DeviceContext->ClearRenderTargetView(g_GBufferRTV[i], color);
 
 	g_DeviceContext->ClearDepthStencilView(g_DepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
@@ -148,7 +156,7 @@ void Application::Render()
 	//** DEFERRED RENDERING **//
 
 	// Preperation for deferred draw call
-	g_DeviceContext->OMSetRenderTargets(4, g_GBufferRTV, g_DepthStencilView);
+	g_DeviceContext->OMSetRenderTargets(5, g_GBufferRTV, g_DepthStencilView);
 	g_DeviceContext->IASetInputLayout(g_DeferredVertexLayout);
 	SetViewport();
 
@@ -206,6 +214,36 @@ void Application::Render()
 	g_DeviceContext->Draw(4, 0);
 
 	g_SwapChain->Present(0, 0);
+
+
+	//** Terrain Rendering **//
+
+	//g_DeviceContext->IASetVertexBuffers(0, 1, &g_TerrainBuffer, &vertexSize, &offset);
+
+	g_DeviceContext->VSSetShader(g_TerrainVertexShader, nullptr, 0);		// Terrain Vertex Shader 
+	g_DeviceContext->GSSetShader(g_TerrainGeometryShader, nullptr, 0);		// Terrain Geometry Shader 
+	g_DeviceContext->PSSetShader(g_TerrainPixelShader, nullptr, 0);			// Terrain Pixel Shader 
+	g_DeviceContext->GSSetConstantBuffers(0, 1, &g_ConstantBuffer);			// Terrain Constant Buffer for the Vertex Shader
+	//g_DeviceContext->PSSetShaderResources(0, 1, &terrain.heightmapSRV);		// Terrain shader resources
+
+	g_DeviceContext->PSSetShaderResources(5, 1, &g_TerrainResource);
+	g_DeviceContext->PSSetSamplers(0, 1, &g_SampleStateWrap);
+
+	// The stride and offset must be stored in variables as we need to provide pointers to these when setting the vertex buffer
+	vertexSize = sizeof(VTerr);
+	offset = 0;
+	g_DeviceContext->IASetVertexBuffers(0, 1, &terrain.mQuadPatchVB, &vertexSize, &offset);
+	g_DeviceContext->IASetIndexBuffer(terrain.mQuadPatchIB, DXGI_FORMAT_R32_UINT, offset);
+
+	// The input assembler recieve the vertices and the vertex layout
+
+	// The vertices interpreted as parts of a triangle in the input assembler
+	g_DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	g_DeviceContext->IASetInputLayout(g_TerrainVertexLayout);
+
+	g_DeviceContext->DrawIndexed(terrain.indexCounter, 0, 0);
+	
+
 }
 
 /* [Skapar g_Device, g_DeviceContext, g_SwapChain, g_RenderTargetView (backbufferRTV)] */
@@ -235,14 +273,17 @@ bool Application::CreateDirect3DContext()
 		g_Device->CreateRenderTargetView(pBackBuffer, NULL, &g_RenderTargetView);
 		pBackBuffer->Release();
 	}
+	else {
+		MessageBoxA(NULL, "Error in CreateDirect3DContext", "Error", MB_OK | MB_ICONEXCLAMATION);
+	}
 	return hr;
 }
 
 bool Application::CreateDepthBuffer()
 {
 	D3D11_TEXTURE2D_DESC depthStencilBufferDesc;
-	depthStencilBufferDesc.Width = (float)width;
-	depthStencilBufferDesc.Height = (float)height;
+	depthStencilBufferDesc.Width = width;
+	depthStencilBufferDesc.Height = height;
 	depthStencilBufferDesc.MipLevels = 1;
 	depthStencilBufferDesc.ArraySize = 1;
 	depthStencilBufferDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
@@ -288,7 +329,7 @@ void Application::SetShadowMapViewport()
 	g_DeviceContext->RSSetViewports(1, &vp);
 }
 
-/* [Skapar våra shaders VertexShader(behövs denna?), DeferredVertexShader, GeometryShader, PixelShader, DeferredPixelShader] */
+/* [Skapar våra shaders VertexShader(behövs denna? ja), DeferredVertexShader, GeometryShader, PixelShader, DeferredPixelShader] */
 bool Application::CreateShaders()
 {
 	//---------- Vertex Shader ----------//
@@ -412,6 +453,102 @@ bool Application::CreateShaders()
 	pVS->Release();
 	pGS->Release();
 	pPS->Release();
+
+	CreateTerrainShader();
+
+	return true;
+}
+
+bool Application::CreateTerrainShader() {
+
+	HRESULT hr;
+
+	ID3DBlob* p_vsBlob = nullptr;
+	ID3DBlob* error = nullptr;
+
+	//** Terrain Vertex shader **//
+
+	hr = D3DCompileFromFile(L"TerrainVertex.hlsl",	
+		nullptr, nullptr, "VS_main", "vs_5_0", 0, 0, &p_vsBlob, &error);
+
+	if (FAILED(hr)) {
+		MessageBoxA(NULL, "Error creating TERRAIN shader. #1", "Error", 
+			MB_OK | MB_ICONEXCLAMATION);
+		if (error) {
+
+			OutputDebugStringA((char*)error->GetBufferPointer());
+			error->Release();
+		}
+		return false;
+	}
+
+	hr = g_Device->CreateVertexShader(p_vsBlob->GetBufferPointer(), p_vsBlob->GetBufferSize(), nullptr, &g_TerrainVertexShader);
+	if (FAILED(hr)) {
+		MessageBoxA(NULL, "Error creating TERRAIN shader. #2", "Error",
+			MB_OK | MB_ICONEXCLAMATION);
+		return false;
+	}
+
+	D3D11_INPUT_ELEMENT_DESC TerrainInputDesc[] = {
+	{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+	{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+	{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 20, D3D11_INPUT_PER_VERTEX_DATA, 0 }
+	};
+
+	hr = g_Device->CreateInputLayout(TerrainInputDesc, ARRAYSIZE(TerrainInputDesc), p_vsBlob->GetBufferPointer(), p_vsBlob->GetBufferSize(), &g_TerrainVertexLayout);
+	if (FAILED(hr)) {
+		MessageBoxA(NULL, "Error creating TERRAIN shader. #3", "Error",
+			MB_OK | MB_ICONEXCLAMATION);
+		return false;
+	}
+
+	//** Terrain Geometry shader **//
+	ID3DBlob* p_gsBlob = nullptr;
+	error = nullptr;
+
+
+	hr = D3DCompileFromFile(L"TerrainPixel.hlsl",
+		nullptr, nullptr, "PS_main", "ps_5_0", 0, 0, &p_gsBlob, &error);
+
+	if (FAILED(hr)) {
+		MessageBoxA(NULL, "Error creating TERRAIN shader. #4", "Error",
+			MB_OK | MB_ICONEXCLAMATION);
+		if (error) {
+
+			OutputDebugStringA((char*)error->GetBufferPointer());
+			error->Release();
+		}
+		return false;
+	}
+
+	hr = g_Device->CreateGeometryShader(p_gsBlob->GetBufferPointer(), p_gsBlob->GetBufferSize(), nullptr, &g_TerrainGeometryShader);
+
+	//** Terrain Pixel shader **//
+	ID3DBlob* p_psBlob = nullptr;
+	error = nullptr;
+
+
+	hr = D3DCompileFromFile(L"TerrainPixel.hlsl", 
+		nullptr, nullptr, "PS_main", "ps_5_0", 0, 0, &p_psBlob, &error);
+
+	if (FAILED(hr)) {
+		MessageBoxA(NULL, "Error creating TERRAIN shader. #5", "Error",
+			MB_OK | MB_ICONEXCLAMATION);
+		if (error) {
+
+			OutputDebugStringA((char*)error->GetBufferPointer());
+			error->Release();
+		}
+		return false;
+	}
+
+	hr = g_Device->CreatePixelShader(p_psBlob->GetBufferPointer(), p_psBlob->GetBufferSize(), nullptr, &g_TerrainPixelShader);
+
+
+	p_vsBlob->Release();
+	p_gsBlob->Release();
+	p_psBlob->Release();
+	error->Release();
 	return true;
 }
 
@@ -449,7 +586,7 @@ bool Application::CreateGBuffer()
 	textureDesc.MiscFlags = 0;
 	textureDesc.CPUAccessFlags = 0;
 
-	for (int i = 0; i < 4; i++)
+	for (int i = 0; i < 5; i++)
 	{
 		g_Device->CreateTexture2D(&textureDesc, NULL, &g_GBufferTEX[i]);
 	}
@@ -460,7 +597,7 @@ bool Application::CreateGBuffer()
 	renderTargetViewDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
 	renderTargetViewDesc.Texture2D.MipSlice = 0;
 
-	for (int i = 0; i < 4; i++)
+	for (int i = 0; i < 5; i++)
 	{
 		g_Device->CreateRenderTargetView(g_GBufferTEX[i], &renderTargetViewDesc, &g_GBufferRTV[i]);
 	}
@@ -472,7 +609,7 @@ bool Application::CreateGBuffer()
 	shaderResourceViewDesc.Texture2D.MipLevels = 1;
 	shaderResourceViewDesc.Texture2D.MostDetailedMip = 0;
 
-	for (int i = 0; i < 4; i++)
+	for (int i = 0; i < 5; i++)
 	{
 		g_Device->CreateShaderResourceView(g_GBufferTEX[i], &shaderResourceViewDesc, &g_GBufferSRV[i]);
 	}
@@ -538,8 +675,8 @@ bool Application::CreateShadowMap()
 {
 	D3D11_TEXTURE2D_DESC textureDesc;
 	ZeroMemory(&textureDesc, sizeof(textureDesc));
-	textureDesc.Width = 500.f;
-	textureDesc.Height = 500.f;
+	textureDesc.Width = 500;
+	textureDesc.Height = 500;
 	textureDesc.MipLevels = 1;
 	textureDesc.ArraySize = 1;
 	textureDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
@@ -566,8 +703,8 @@ bool Application::CreateShadowMap()
 
 
 	D3D11_TEXTURE2D_DESC depthBufferDesc;
-	depthBufferDesc.Width = 500.f;
-	depthBufferDesc.Height = 500.f;
+	depthBufferDesc.Width = 500;
+	depthBufferDesc.Height = 500;
 	depthBufferDesc.MipLevels = 1;
 	depthBufferDesc.ArraySize = 1;
 	depthBufferDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;

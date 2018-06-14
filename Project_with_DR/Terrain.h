@@ -21,19 +21,17 @@ public:
 
 	struct initInfo
 	{
+		// filename of the heightmap
 		std::wstring HeightMapFilename;
-		std::wstring LayerMapFilename0;
-		std::wstring LayerMapFilename1;
-		std::wstring LayerMapFilename2;
-		std::wstring LayerMapFilename3;
-		std::wstring LayerMapFilename4;
-		std::wstring BlendMapFilename;
 
+		// height and width of the map
 		UINT hMapWidth;
 		UINT hMapHeight;
+
+		// height scale
 		float hScale;
 
-		// The spacing along the x and z-axes
+		// The spacing along the x and z-axes (length between vertices)
 		float quadSize; // aka Cellspacing
 	};
 
@@ -47,7 +45,7 @@ private:
 	void BuildQuadPatchIB(ID3D11Device* device); // index buffer
 	void BuildHeightmapSRV(ID3D11Device* device); // Shader resource View
 	
-	//static const int CellsPerPatch = 64;
+	static const int CellsPerPatch = 64;
 	int NumbPatchVertRows;
 	int NumbPatchVertCols;
 	int NumbPatchVertices;
@@ -55,14 +53,8 @@ private:
 
 	initInfo terrain_info;
 	//DirectX::XMFLOAT4X4 world;
-	std::vector<DirectX::XMFLOAT2>PatchBoundsY;
+	//std::vector<DirectX::XMFLOAT2>PatchBoundsY;
 
-	ID3D11Buffer* mQuadPatchVB;
-	ID3D11Buffer* mQuadPatchIB;
-
-	ID3D11ShaderResourceView* heightmapSRV;
-	//ID3D11ShaderResourceView* mBlendMapSRV;
-	//ID3D11ShaderResourceView* mLayerMapArraySRV;
 
 public:
 	
@@ -70,6 +62,15 @@ public:
 	~Terrain();
 
 	std::vector<float> heightMap;
+	ID3D11Buffer* mQuadPatchVB;
+	ID3D11Buffer* mQuadPatchIB;
+
+	ID3D11ShaderResourceView* heightmapSRV;
+	//ID3D11ShaderResourceView* mBlendMapSRV;
+	//ID3D11ShaderResourceView* mLayerMapArraySRV;
+
+	// one objstruct = one vertex
+	unsigned int indexCounter = 0;
 
 	float getWidth()const;
 	float getDepth()const;

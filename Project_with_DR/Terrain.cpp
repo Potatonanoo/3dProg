@@ -1,7 +1,7 @@
 #include "Terrain.h"
 
 Terrain::Terrain() {
-	terrain_info.HeightMapFilename = L"Textures\\HMap.raw";
+	terrain_info.HeightMapFilename = L"Textures\\terrain_test.raw";
 	terrain_info.hMapHeight = 4;
 	terrain_info.hMapWidth = 4;
 
@@ -22,6 +22,34 @@ Terrain::~Terrain() {
 	// Release heightmapSRV
 }
 
+void Terrain::LoadHeightmap()
+{
+	// Takes in a height per vertex
+	std::vector<unsigned char> in(terrain_info.hMapWidth * terrain_info.hMapHeight);
+
+	std::ifstream inFile;
+	inFile.open(terrain_info.HeightMapFilename.c_str(), std::ios_base::binary);
+
+	if (inFile)
+	{
+		// Read RAW file.
+		inFile.read((char*)&in[0], (std::streamsize)in.size());
+		inFile.close();
+	}
+	else {
+		//std::cout << "File not found\n";
+		MessageBoxA(NULL, "Heightmap file not found", "Error", MB_OK | MB_ICONEXCLAMATION);
+
+	}
+
+	// Copy array to float array and scale.
+	heightMap.resize(terrain_info.hMapHeight * terrain_info.hMapWidth, 0);
+
+	for (unsigned int i = 0; i < terrain_info.hMapHeight * terrain_info.hMapWidth; i++) {
+		heightMap[i] = (in[i])*terrain_info.hScale;
+	}
+}
+
 bool Terrain::inBounds(int i, int j) {
 	/*
 	In case that we are on the edge of the hmap, 
@@ -29,7 +57,13 @@ bool Terrain::inBounds(int i, int j) {
 	then we just take the average with as many neighbour pixels as possible
 	*/
 
-	return (i >= 0 && i < (int)terrain_info.hMapHeight && j >= 0 && j < (int)terrain_info.hMapWidth);
+	if (i >= 0 && i < (int)terrain_info.hMapHeight && j >= 0 && j < (int)terrain_info.hMapWidth) {
+		return true;
+	}
+	else {
+		return false;
+	}
+
 	// returns true is the entry is on the hmap otherwise false
 }
 
@@ -44,9 +78,9 @@ float Terrain::Average(int i, int j) {
 
 	// int allows negatives.
 	// no iterations of the outer for loop occur.
-	for (int m = i - 1; m <= i + 1; ++m)
+	for (int m = i - 1; m <= i + 1; m++)
 	{
-		for (int n = j - 1; n <= j + 1; ++n)
+		for (int n = j - 1; n <= j + 1; n++)
 		{
 			if (inBounds(m, n))
 			{
@@ -59,35 +93,12 @@ float Terrain::Average(int i, int j) {
 	return avg / num;
 }
 
-void Terrain::LoadHeightmap()
-{
-	// A height per vertex
-	std::vector<unsigned char> in(terrain_info.hMapWidth * terrain_info.hMapHeight);
-
-	std::ifstream inFile;
-	inFile.open(terrain_info.HeightMapFilename.c_str(), std::ios_base::binary);
-
-	if (inFile)
-	{
-		// Read RAW.
-		inFile.read((char*)&in[0], (std::streamsize)in.size());
-		inFile.close();
-	}
-
-	// Copy array to float array and scale.
-	heightMap.resize(terrain_info.hMapHeight * terrain_info.hMapWidth, 0);
-
-	for (UINT i = 0; i < terrain_info.hMapHeight * terrain_info.hMapWidth; ++i){
-		heightMap[i] = (in[i] / 255.0f)*terrain_info.hScale;
-	}
-}
-
 void Terrain::Smooth() {
 	std::vector<float> dest(heightMap.size());
 
-	for (UINT i = 0; i < terrain_info.hMapHeight; ++i)
+	for (unsigned int i = 0; i < terrain_info.hMapHeight; i++)
 	{
-		for (UINT j = 0; j < terrain_info.hMapWidth; ++j)
+		for (unsigned int j = 0; j < terrain_info.hMapWidth; j++)
 		{
 			dest[i*terrain_info.hMapWidth + j] = Average(i, j);
 		}
@@ -110,10 +121,10 @@ void Terrain::BuildQuadPatchVB(ID3D11Device* device) {
 	float du = 1.0f / (NumbPatchVertCols - 1);
 	float dv = 1.0f / (NumbPatchVertRows - 1);
 
-	for (UINT i = 0; i < NumbPatchVertRows; i++)
+	for (unsigned int i = 0; i < NumbPatchVertRows; i++)
 	{
 		float z = halfDepth - i * patchDepth;
-		for (UINT j = 0; j < NumbPatchVertCols; j++)
+		for (unsigned int j = 0; j < NumbPatchVertCols; j++)
 		{
 			float x = -halfWidth + j * patchWidth;
 			// float y = heightMap[(i*NumPatchVertCols + j)];
@@ -125,15 +136,15 @@ void Terrain::BuildQuadPatchVB(ID3D11Device* device) {
 		}
 	}
 
-	// Store aligned bounding box y-bouds upper left patch corner.
-	for (UINT i = 0; i < NumbPatchVertRows - 1; i++)
-	{
-		for (UINT j = 0; j < NumbPatchVertCols - 1; j++)
-		{
-			UINT patchID = i * (NumbPatchVertCols - 1) + j;
-			patchVertices[i*NumbPatchVertCols + j].BoundsY = PatchBoundsY[patchID];
-		}
-	}
+	//// Store aligned bounding box y-bouds upper left patch corner.
+	//for (unsigned int i = 0; i < NumbPatchVertRows - 1; i++)
+	//{
+	//	for (unsigned int j = 0; j < NumbPatchVertCols - 1; j++)
+	//	{
+	//		unsigned int patchID = i * (NumbPatchVertCols - 1) + j;
+	//		patchVertices[i*NumbPatchVertCols + j].BoundsY = PatchBoundsY[patchID];
+	//	}
+	//}
 
 	D3D11_BUFFER_DESC vbd;
 	vbd.Usage = D3D11_USAGE_IMMUTABLE;
@@ -149,7 +160,8 @@ void Terrain::BuildQuadPatchVB(ID3D11Device* device) {
 
 	if (hr != S_OK)
 	{
-		std::cout << "Error Terrain Vertex Buffer";
+		//std::cout << "Error Terrain Vertex Buffer";
+		MessageBoxA(NULL, "Error in Terrain Vertex Buffer", "Error", MB_OK | MB_ICONEXCLAMATION);
 	}
 
 }
@@ -174,6 +186,7 @@ void Terrain::BuildQuadPatchIB(ID3D11Device* device){
 			indices[k + 2] = (i + 1)*NumbPatchVertCols + j;
 			indices[k + 3] = (i + 1)*NumbPatchVertRows + j + 1;
 			k += 4; // selection of next quad
+			indexCounter += 4;
 		}
 	}
 
@@ -191,7 +204,8 @@ void Terrain::BuildQuadPatchIB(ID3D11Device* device){
 
 	if (hr != S_OK)
 	{
-		std::cout << "Error Terrain Index Buffer";
+		//std::cout << "Error Terrain Index Buffer";
+		MessageBoxA(NULL, "Error in Terrain Index Buffer", "Error", MB_OK | MB_ICONEXCLAMATION);
 	}
 
 }
@@ -200,6 +214,7 @@ void Terrain::BuildHeightmapSRV(ID3D11Device* device) {
 	// Function for supporting tessellation and displacement mapping
 	// We sample the heightmap in our shader programs. 
 	// For this we must create shader resource view to the hmap.
+
 	D3D11_TEXTURE2D_DESC texDesc;
 	texDesc.Width = terrain_info.hMapWidth;
 	texDesc.Height = terrain_info.hMapHeight;
@@ -233,7 +248,8 @@ void Terrain::BuildHeightmapSRV(ID3D11Device* device) {
 
 	if (hr != S_OK)
 	{
-		std::cout << "Error Terrain Shader Resource View";
+		//std::cout << "Error Terrain Shader Resource View\n";
+		MessageBoxA(NULL, "Error in Terrain Shader Resource View", "Error", MB_OK | MB_ICONEXCLAMATION);
 	}
 
 	//ReleaseCOM(hmapTex);
