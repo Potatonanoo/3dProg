@@ -48,7 +48,7 @@ Application::~Application()
 }
 
 /* [Initialise anropas när programmet startas. Här sker alla förberedelser för att kunna köra programmet.] */
-bool Application::Initialise()
+bool Application::Initialize()
 {
 	bool result = true;
 
@@ -81,10 +81,10 @@ bool Application::Initialise()
 	obj[5] = new Object(g_Device, "notcube", L"brick.dds");
 	obj[5]->translate(0.f, 0.f, 8.f);
 
-	obj[6] = new Object(g_Device, "terrain", L"Textures\\terrain_test.raw");
-	obj[6]->translate(0.f, -3.f, 0.f);
-
 	camera = new Camera({ 0.f, 0.f, -5.f, 1.f }, { 0.f, 0.f, 1.f, 1.f }, { 0.f, 1.f, 0.f, 1.f });
+	
+	terrain = new Terrain(g_Device, L"Textures\\terrain_test.raw");
+	terrain->translate(0.f, -3.5f, 0.f);
 
 	result = CreateDepthBuffer();
 	SetViewport();
@@ -136,7 +136,7 @@ void Application::Render()
 		g_DeviceContext->Map(g_ConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &dataPtr);
 		memcpy(dataPtr.pData, &ObjData, sizeof(ConstantBuffer));
 		g_DeviceContext->Unmap(g_ConstantBuffer, 0);
-
+		
 		obj[i]->setVertexBuffer(g_DeviceContext);
 
 		g_DeviceContext->VSSetShader(g_SM_VertexShader, nullptr, 0);
@@ -216,34 +216,36 @@ void Application::Render()
 	g_SwapChain->Present(0, 0);
 
 
-	//** Terrain Rendering **//
-
-	//g_DeviceContext->IASetVertexBuffers(0, 1, &g_TerrainBuffer, &vertexSize, &offset);
-
-	g_DeviceContext->VSSetShader(g_TerrainVertexShader, nullptr, 0);		// Terrain Vertex Shader 
-	g_DeviceContext->GSSetShader(g_TerrainGeometryShader, nullptr, 0);		// Terrain Geometry Shader 
-	g_DeviceContext->PSSetShader(g_TerrainPixelShader, nullptr, 0);			// Terrain Pixel Shader 
-	g_DeviceContext->GSSetConstantBuffers(0, 1, &g_ConstantBuffer);			// Terrain Constant Buffer for the Vertex Shader
-	//g_DeviceContext->PSSetShaderResources(0, 1, &terrain.heightmapSRV);		// Terrain shader resources
-
-	g_DeviceContext->PSSetShaderResources(5, 1, &g_TerrainResource);
-	g_DeviceContext->PSSetSamplers(0, 1, &g_SampleStateWrap);
-
-	// The stride and offset must be stored in variables as we need to provide pointers to these when setting the vertex buffer
-	vertexSize = sizeof(VTerr);
-	offset = 0;
-	g_DeviceContext->IASetVertexBuffers(0, 1, &terrain.mQuadPatchVB, &vertexSize, &offset);
-	g_DeviceContext->IASetIndexBuffer(terrain.mQuadPatchIB, DXGI_FORMAT_R32_UINT, offset);
-
-	// The input assembler recieve the vertices and the vertex layout
-
-	// The vertices interpreted as parts of a triangle in the input assembler
+	////** Terrain Rendering **//
 	g_DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	g_DeviceContext->IASetInputLayout(g_TerrainVertexLayout);
-
-	g_DeviceContext->DrawIndexed(terrain.indexCounter, 0, 0);
 	
+	g_DeviceContext->VSSetShader(g_TerrainVertexShader, nullptr, 0);		// Terrain Vertex Shader 
+	g_DeviceContext->GSSetShader(g_TerrainGeometryShader, nullptr, 0);		// Terrain Geometry Shader 
+	g_DeviceContext->PSSetShader(g_TerrainPixelShader, nullptr, 0);			// Terrain Pixel Shader
+	//g_DeviceContext->GSSetConstantBuffers(0, 1, &g_ConstantBuffer);			// Terrain Constant Buffer for the Vertex Shader
+	
+	UINT VertSize = sizeof(VTerr);
+	g_DeviceContext->PSSetShaderResources(0, 1, &terrain->heightmapSRV);		// Terrain shader resources
+	g_DeviceContext->IASetVertexBuffers(0, 1, &terrain->mQuadPatchVB, &VertSize, &offset);
+	g_DeviceContext->IASetIndexBuffer(terrain->mQuadPatchIB, DXGI_FORMAT_R32_UINT, 0);
 
+	g_DeviceContext->PSSetSamplers(0, 1, &g_SampleStateWrap);
+	g_DeviceContext->DrawIndexed(terrain->getIndexCounter(), 0, 0);
+
+	//// The stride and offset must be stored in variables as we need to provide pointers to these when setting the vertex buffer
+
+	////g_DeviceContext->IASetVertexBuffers(0, 1, &terrain->mQuadPatchVB, &vertexSize, &offset);
+	////g_DeviceContext->IASetIndexBuffer(terrain->mQuadPatchIB, DXGI_FORMAT_R32_UINT, offset);
+
+	//// The input assembler recieve the vertices and the vertex layout
+
+	//// The vertices interpreted as parts of a triangle in the input assembler
+	//g_DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	//g_DeviceContext->IASetInputLayout(g_TerrainVertexLayout);
+
+	//g_DeviceContext->DrawIndexed(terrain->getIndexCounter(), 0, 0);
+	
 }
 
 /* [Skapar g_Device, g_DeviceContext, g_SwapChain, g_RenderTargetView (backbufferRTV)] */

@@ -30,7 +30,7 @@ public:
 	Application(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int nCmdShow, HWND wndHandle, int width, int height);
 	~Application();
 
-	bool Initialise();
+	bool Initialize();
 	bool Update(float dt);
 	void Render();
 	void createSamplerState();
@@ -50,7 +50,7 @@ private:
 private:
 	Object** obj;
 	Camera* camera;
-	Terrain terrain;
+	Terrain* terrain;
 
 	IDXGISwapChain*	g_SwapChain;
 	ID3D11Device* g_Device;
@@ -66,14 +66,12 @@ private:
 	ID3D11PixelShader* g_PixelShader;
 
 	// Terraing Rendering
-	ID3D11Buffer* g_TerrainBuffer;
+	//ID3D11Buffer* g_TerrainBuffer;
 
 	ID3D11InputLayout* g_TerrainVertexLayout;
 	ID3D11VertexShader* g_TerrainVertexShader;
 	ID3D11GeometryShader* g_TerrainGeometryShader;
 	ID3D11PixelShader* g_TerrainPixelShader;
-
-	ID3D11ShaderResourceView* g_TerrainResource;
 
 	// Deferred Rendering
 	ID3D11InputLayout* g_DeferredVertexLayout;

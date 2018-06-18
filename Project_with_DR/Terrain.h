@@ -55,28 +55,39 @@ private:
 	//DirectX::XMFLOAT4X4 world;
 	//std::vector<DirectX::XMFLOAT2>PatchBoundsY;
 
-
+	// one objstruct = one vertex
+	unsigned int indexCounter;
+	
+	
+	//ID3D11ShaderResourceView* mBlendMapSRV;
+	//ID3D11ShaderResourceView* mLayerMapArraySRV;
+	DirectX::XMMATRIX WorldMatrix;
 public:
 	
 	Terrain();
+	Terrain(ID3D11Device* device, std::wstring filename);
 	~Terrain();
+	void Draw(ID3D11DeviceContext* g_DeviceContext);
 
 	std::vector<float> heightMap;
+
 	ID3D11Buffer* mQuadPatchVB;
 	ID3D11Buffer* mQuadPatchIB;
-
 	ID3D11ShaderResourceView* heightmapSRV;
-	//ID3D11ShaderResourceView* mBlendMapSRV;
-	//ID3D11ShaderResourceView* mLayerMapArraySRV;
-
-	// one objstruct = one vertex
-	unsigned int indexCounter = 0;
 
 	float getWidth()const;
 	float getDepth()const;
+	unsigned int getIndexCounter()const;
+
+	//ID3D11Buffer* getVertexBuffer();
+	//ID3D11Buffer* getIndexBuffer();
+	//ID3D11ShaderResourceView* getShaderResourceView();
+	//ID3D11SamplerState* getSamplerState();
+
 	//float getHeight(float x, float z)const;
 	//void setWorld(DirectX::CXMMATRIX M);
-	//DirectX::XMMATRIX getWorld()const;
+	DirectX::XMMATRIX getWorld()const;
+	void translate(float x, float y, float z);
 
 };
 

@@ -26,7 +26,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 	MSG msg = { 0 };
 	HWND wndHandle = InitWindow(hInstance);
 	Application* app = new Application(hInstance, hPrevInstance, lpCmdLine, nCmdShow, wndHandle, WIDTH, HEIGHT);
-	app->Initialise();
+	app->Initialize();
 
 	if (wndHandle)
 	{

@@ -1,6 +1,12 @@
 #include "Terrain.h"
 
 Terrain::Terrain() {
+	heightmapSRV = nullptr;
+	mQuadPatchVB = nullptr;
+	mQuadPatchIB = nullptr;
+	indexCounter = 0;
+
+	WorldMatrix = DirectX::XMMatrixIdentity();
 	terrain_info.HeightMapFilename = L"Textures\\terrain_test.raw";
 	terrain_info.hMapHeight = 4;
 	terrain_info.hMapWidth = 4;
@@ -13,13 +19,70 @@ Terrain::Terrain() {
 
 	NumbPatchVertices = NumbPatchVertRows * NumbPatchVertCols;
 	NumbPatchQuadFaces = (NumbPatchVertRows - 1) * (NumbPatchVertCols - 1);
+
+	
+	MessageBoxA(NULL, "Heightmap not correctly initilized", "Error", MB_OK | MB_ICONEXCLAMATION);
 }
 
+Terrain::Terrain(ID3D11Device* device, std::wstring filename) {
+	heightmapSRV = nullptr;
+	mQuadPatchVB = nullptr;
+	mQuadPatchIB = nullptr;
+	indexCounter = 0;
+
+	WorldMatrix = DirectX::XMMatrixIdentity();
+	terrain_info.hMapHeight = 4;
+	terrain_info.hMapWidth = 4;
+	terrain_info.quadSize = 1;
+	terrain_info.hScale = 1;
+
+	NumbPatchVertRows = (terrain_info.hMapHeight - 1);
+	NumbPatchVertCols = (terrain_info.hMapWidth - 1);
+
+	NumbPatchVertices = NumbPatchVertRows * NumbPatchVertCols;
+	NumbPatchQuadFaces = (NumbPatchVertRows - 1) * (NumbPatchVertCols - 1);
+
+	terrain_info.HeightMapFilename = filename;
+	LoadHeightmap();
+	//Smooth();
+
+	BuildQuadPatchVB(device); // vertex buffer
+	BuildQuadPatchIB(device); // index buffer
+	BuildHeightmapSRV(device); // Shader resource View
+}
 
 Terrain::~Terrain() {
-	// Release mQuadPatchVB
-	// Release mQuadPatchIB
-	// Release heightmapSRV
+	mQuadPatchIB->Release();
+	mQuadPatchVB->Release();
+	heightmapSRV->Release();
+}
+
+void Terrain::Draw(ID3D11DeviceContext* g_DeviceContext) {
+	//** Terrain Rendering **//
+	// The vertices interpreted as parts of a triangle in the input assembler
+	g_DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	//g_DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_4_CONTROL_POINT_PATCHLIST);
+	//g_DeviceContext->IASetInputLayout(g_TerrainVertexLayout);
+
+	UINT VerSize = sizeof(VTerr);
+	UINT offset = 0;
+
+	//g_DeviceContext->VSSetShader(g_TerrainVertexShader, nullptr, 0);		// Terrain Vertex Shader 
+	//g_DeviceContext->GSSetShader(g_TerrainGeometryShader, nullptr, 0);		// Terrain Geometry Shader 
+	//g_DeviceContext->PSSetShader(g_TerrainPixelShader, nullptr, 0);			// Terrain Pixel Shader 
+	//g_DeviceContext->GSSetConstantBuffers(0, 1, &g_ConstantBuffer);			// Terrain Constant Buffer for the Vertex Shader
+	g_DeviceContext->PSSetShaderResources(0, 1, &heightmapSRV);		// Terrain shader resources
+	//g_DeviceContext->PSSetShaderResources(5, 1, &terrain->heightmapSRV);
+	//g_DeviceContext->PSSetSamplers(0, 1, &g_SampleStateWrap);
+
+	// The stride and offset must be stored in variables as we need to provide pointers to these when setting the vertex buffer
+
+	g_DeviceContext->IASetVertexBuffers(0, 1, &mQuadPatchVB, &VerSize, &offset);
+	g_DeviceContext->IASetIndexBuffer(mQuadPatchIB, DXGI_FORMAT_R16_UINT, 0);
+
+	// The input assembler recieve the vertices and the vertex layout
+
+	g_DeviceContext->DrawIndexed(indexCounter, 0, 0);
 }
 
 void Terrain::LoadHeightmap()
@@ -67,6 +130,7 @@ bool Terrain::inBounds(int i, int j) {
 	// returns true is the entry is on the hmap otherwise false
 }
 
+// averages by nearby points
 float Terrain::Average(int i, int j) {
 
 	// Function calculates average height of the ij element.
@@ -93,6 +157,7 @@ float Terrain::Average(int i, int j) {
 	return avg / num;
 }
 
+// Smoothing the terrain
 void Terrain::Smooth() {
 	std::vector<float> dest(heightMap.size());
 
@@ -109,6 +174,7 @@ void Terrain::Smooth() {
 
 }
 
+//Create vertex buffer
 void Terrain::BuildQuadPatchVB(ID3D11Device* device) {
 	// nr of vertices
 	std::vector<VTerr> patchVertices(NumbPatchVertRows*NumbPatchVertCols);
@@ -146,6 +212,7 @@ void Terrain::BuildQuadPatchVB(ID3D11Device* device) {
 	//	}
 	//}
 
+	//vertex buffer desc
 	D3D11_BUFFER_DESC vbd;
 	vbd.Usage = D3D11_USAGE_IMMUTABLE;
 	vbd.ByteWidth = sizeof(VTerr) * patchVertices.size();
@@ -166,6 +233,7 @@ void Terrain::BuildQuadPatchVB(ID3D11Device* device) {
 
 }
 
+// create index buffer
 void Terrain::BuildQuadPatchIB(ID3D11Device* device){
 
 	//indices is the vertices position
@@ -190,6 +258,7 @@ void Terrain::BuildQuadPatchIB(ID3D11Device* device){
 		}
 	}
 
+	//index buffer desc
 	D3D11_BUFFER_DESC ibd;
 	ibd.Usage = D3D11_USAGE_IMMUTABLE;
 	ibd.ByteWidth = sizeof(USHORT)*indices.size();
@@ -237,7 +306,7 @@ void Terrain::BuildHeightmapSRV(ID3D11Device* device) {
 	data.SysMemSlicePitch = 0;
 	ID3D11Texture2D* hmapTex = 0;
 	HRESULT hr;
-	hr = device->CreateTexture2D(&texDesc, &data, &hmapTex);
+	hr = device->CreateTexture2D(&texDesc, &data, &hmapTex); // create texture
 
 	D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
 	srvDesc.Format = texDesc.Format;
@@ -264,4 +333,17 @@ float Terrain::getDepth()const {
 	// Total terrain depth
 	return (terrain_info.hMapHeight - 1)*terrain_info.quadSize;
 
+}
+
+unsigned int Terrain::getIndexCounter()const {
+	return this->indexCounter;
+}
+
+DirectX::XMMATRIX Terrain::getWorld()const {
+	return WorldMatrix;
+}
+
+void Terrain::translate(float x, float y, float z)
+{
+	WorldMatrix = WorldMatrix * DirectX::XMMatrixTranslation(x, y, z);
 }
