@@ -1,38 +1,18 @@
 #include "Terrain.h"
 
 Terrain::Terrain() {
-	heightmapSRV = nullptr;
+	//heightmapSRV = nullptr;
+	terrainResource = nullptr;
 	mQuadPatchVB = nullptr;
 	mQuadPatchIB = nullptr;
 	indexCounter = 0;
-
-	WorldMatrix = DirectX::XMMatrixIdentity();
-	terrain_info.HeightMapFilename = L"Textures\\terrain_test.raw";
-	terrain_info.hMapHeight = 4;
-	terrain_info.hMapWidth = 4;
-
-	terrain_info.quadSize = 1;
-	terrain_info.hScale = 1;
-
-	NumbPatchVertRows = (terrain_info.hMapHeight - 1);
-	NumbPatchVertCols = (terrain_info.hMapWidth - 1);
-
-	NumbPatchVertices = NumbPatchVertRows * NumbPatchVertCols;
-	NumbPatchQuadFaces = (NumbPatchVertRows - 1) * (NumbPatchVertCols - 1);
-
 	
-	MessageBoxA(NULL, "Heightmap not correctly initilized", "Error", MB_OK | MB_ICONEXCLAMATION);
-}
+	//MessageBoxA(NULL, "Missing filename for Heightmap", "Error", MB_OK | MB_ICONEXCLAMATION);
 
-Terrain::Terrain(ID3D11Device* device, std::wstring filename) {
-	heightmapSRV = nullptr;
-	mQuadPatchVB = nullptr;
-	mQuadPatchIB = nullptr;
-	indexCounter = 0;
+	terrain_info.HeightMapFilename = L"Textures\\HMap.raw";
+	terrain_info.hMapHeight = 64;
+	terrain_info.hMapWidth = 64;
 
-	WorldMatrix = DirectX::XMMatrixIdentity();
-	terrain_info.hMapHeight = 4;
-	terrain_info.hMapWidth = 4;
 	terrain_info.quadSize = 1;
 	terrain_info.hScale = 1;
 
@@ -41,20 +21,14 @@ Terrain::Terrain(ID3D11Device* device, std::wstring filename) {
 
 	NumbPatchVertices = NumbPatchVertRows * NumbPatchVertCols;
 	NumbPatchQuadFaces = (NumbPatchVertRows - 1) * (NumbPatchVertCols - 1);
-
-	terrain_info.HeightMapFilename = filename;
-	LoadHeightmap();
-	//Smooth();
-
-	BuildQuadPatchVB(device); // vertex buffer
-	BuildQuadPatchIB(device); // index buffer
-	BuildHeightmapSRV(device); // Shader resource View
+	
 }
 
 Terrain::~Terrain() {
-	mQuadPatchIB->Release();
-	mQuadPatchVB->Release();
-	heightmapSRV->Release();
+	//mQuadPatchIB->Release();
+	//mQuadPatchVB->Release();
+	//terrainResources->Release();
+	//heightmapSRV->Release();
 }
 
 void Terrain::Update() {
@@ -178,16 +152,6 @@ void Terrain::BuildQuadPatchVB(ID3D11Device* device) {
 		}
 	}
 
-	//// Store aligned bounding box y-bouds upper left patch corner.
-	//for (unsigned int i = 0; i < NumbPatchVertRows - 1; i++)
-	//{
-	//	for (unsigned int j = 0; j < NumbPatchVertCols - 1; j++)
-	//	{
-	//		unsigned int patchID = i * (NumbPatchVertCols - 1) + j;
-	//		patchVertices[i*NumbPatchVertCols + j].BoundsY = PatchBoundsY[patchID];
-	//	}
-	//}
-
 	//vertex buffer desc
 	D3D11_BUFFER_DESC vbd;
 	vbd.Usage = D3D11_USAGE_IMMUTABLE;
@@ -254,7 +218,7 @@ void Terrain::BuildQuadPatchIB(ID3D11Device* device){
 	}
 
 }
-
+/*
 void Terrain::BuildHeightmapSRV(ID3D11Device* device) {
 	// Function for supporting tessellation and displacement mapping
 	// We sample the heightmap in our shader programs. 
@@ -298,7 +262,7 @@ void Terrain::BuildHeightmapSRV(ID3D11Device* device) {
 	}
 
 	//ReleaseCOM(hmapTex);
-}
+}*/
 
 float Terrain::getWidth()const {
 	// Total terrain width

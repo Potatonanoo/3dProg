@@ -83,8 +83,15 @@ bool Application::Initialize()
 
 	camera = new Camera({ 0.f, 0.f, -5.f, 1.f }, { 0.f, 0.f, 1.f, 1.f }, { 0.f, 1.f, 0.f, 1.f });
 	
-	terrain = new Terrain(g_Device, L"Textures\\terrain_test.raw");
-	terrain->translate(0.f, -3.5f, 0.f);
+	//terrain = new Terrain(g_Device, L"Textures\\terrain_test.raw");
+	//terrain = Terrain(L"Textures\\HMap.raw");
+	CreateDDSTextureFromFile(g_Device, NULL, L"Textures\\terrain.png", NULL, &terrain.grassResource);
+
+	terrain.LoadHeightmap();
+	//Smooth();
+	terrain.BuildQuadPatchVB(g_Device); // vertex buffer
+	terrain.BuildQuadPatchIB(g_Device); // index buffer
+	//terrain->translate(0.f, -3.5f, 0.f);
 
 	result = CreateDepthBuffer();
 	SetViewport();
@@ -199,16 +206,19 @@ void Application::Render()
 	g_DeviceContext->VSSetShader(g_TerrainVertexShader, nullptr, 0);		// Terrain Vertex Shader 
 	g_DeviceContext->GSSetShader(g_TerrainGeometryShader, nullptr, 0);		// Terrain Geometry Shader 
 	g_DeviceContext->PSSetShader(g_TerrainPixelShader, nullptr, 0);			// Terrain Pixel Shader
-																			//g_DeviceContext->GSSetConstantBuffers(0, 1, &g_TerrainBuffer);			// Terrain Constant Buffer for the Vertex Shader
-	//g_DeviceContext->GSSetShaderResources(0, 1terrain->heightmapSRV);
+	//g_DeviceContext->GSSetConstantBuffers(0, 1, &g_TerrainBuffer);		// Terrain Constant Buffer for the Vertex Shader
 
 	UINT VertSize = sizeof(VTerr);
-	g_DeviceContext->PSSetShaderResources(0, 1, &terrain->heightmapSRV);		// Terrain shader resources
-	g_DeviceContext->IASetVertexBuffers(0, 1, &terrain->mQuadPatchVB, &VertSize, &offset);
-	g_DeviceContext->IASetIndexBuffer(terrain->mQuadPatchIB, DXGI_FORMAT_R32_UINT, 0);
+	//g_DeviceContext->PSSetShaderResources(0, 1, &terrain->heightmapSRV);	// Terrain shader resources
+	//g_DeviceContext->GSSetShaderResources(0, 2, &terrain->terrainResource);	// Terrain shader resources
+	g_DeviceContext->GSSetConstantBuffers(0, 1, &g_ConstantBuffer);
+	g_DeviceContext->PSSetShaderResources(0, 2, &terrain.terrainResource);
+	
+	g_DeviceContext->IASetVertexBuffers(0, 1, &terrain.mQuadPatchVB, &VertSize, &offset);
+	g_DeviceContext->IASetIndexBuffer(terrain.mQuadPatchIB, DXGI_FORMAT_R32_UINT, 0);
 
 	g_DeviceContext->PSSetSamplers(0, 1, &g_SampleStateWrap);
-	g_DeviceContext->DrawIndexed(terrain->getIndexCounter(), 0, 0);
+	g_DeviceContext->DrawIndexed(terrain.getIndexCounter(), 0, 0);
 
 	//** NORMAL RENDERING **//
 	g_DeviceContext->OMSetRenderTargets(1, &g_RenderTargetView, NULL);
@@ -561,7 +571,12 @@ bool Application::CreateTerrainShader() {
 	p_vsBlob->Release();
 	p_gsBlob->Release();
 	p_psBlob->Release();
-	error->Release();
+	//if (error != nullptr) error->Release(); 
+	//if (error == nullptr) {
+	//	MessageBoxA(NULL, "Terrain errorBlob was a nullptr on release.", "Error",
+	//		MB_OK | MB_ICONEXCLAMATION);
+	//}
+
 	return true;
 }
 

@@ -8,7 +8,7 @@ cbuffer ConstantBuffer : register(b0) {
 };
 
 struct GS_IN {
-	float3 Pos : POSITON;
+	float4 Pos : POSITON;
 	float2 Tex : TEXCOORD0;
 	float3 normal : NORMAL;
 	//float3 BoundsY : TEXCOORD1;
@@ -17,6 +17,7 @@ struct GS_IN {
 struct GS_OUT {
 	float4 Pos		: SV_POSITION;
 	float4 PosW		: POSITION;
+	float3 ViewPos	: POSITION1;
 	float2 Tex		: TEXCOORD0;
 	float4 lPos		: TEXCOORD1;
 	float3 normal	: NORMAL;
@@ -28,18 +29,19 @@ void GS_main(triangle GS_IN input[3], inout TriangleStream< GS_OUT > output) {
 	// Calculate the normal to determine the direction for the new triangle to be created 
 	// (closer to the camera)
 
-	//output.Pos = input.Pos;
-	output.Pos.y = heightMap.SampleLevel(heightMapSampler, input.Tex, 0).r;
+	//element.Pos = input.Pos;
+	
 
 	for (uint i = 0; i < 3; i++)
 	{
 		// the input position must be multiplied with the World matrix for the World position to Pixelshader
 		element.PosW = mul(float4(input[i].Pos.xyz, 1.0f), WorldMatrix);
 		// the input position must be multiplied with the WorldViewProj matrix for the WorldViewProj
-		element.Pos = mul(float4(input[i].Pos.xyz, 1.0f), mul(WorldMatrix, ViewMatrix));
+		element.Pos = mul(float4(input[i].Pos.xyz, 1.0f), mul(WorldMatrix, mul(ViewMatrix, ProjectionMatrix)));
 		//element.lPos = mul(float4(input[i].Pos.xyz, 1.0f), mul(WorldMatrix, LightProjectionMatrix));
 
 		element.normal = mul(float4(input[i].normal, 1.0f), (float3x3)WorldMatrix);
+		//element.normal = normalize(element.normal);
 		element.Tex = input[i].Tex;
 
 		output.Append(element); 

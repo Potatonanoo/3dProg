@@ -50,7 +50,7 @@ private:
 private:
 	Object** obj;
 	Camera* camera;
-	Terrain* terrain;
+	Terrain terrain;
 
 	IDXGISwapChain*	g_SwapChain;
 	ID3D11Device* g_Device;

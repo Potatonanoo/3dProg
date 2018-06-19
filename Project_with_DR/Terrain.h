@@ -38,13 +38,7 @@ public:
 private:
 	bool inBounds(int i, int j);
 	float Average(int i, int j);
-	void Smooth();
 
-	void LoadHeightmap();
-	void BuildQuadPatchVB(ID3D11Device* device); // vertex buffer
-	void BuildQuadPatchIB(ID3D11Device* device); // index buffer
-	void BuildHeightmapSRV(ID3D11Device* device); // Shader resource View
-	
 	static const int CellsPerPatch = 64;
 	int NumbPatchVertRows;
 	int NumbPatchVertCols;
@@ -65,15 +59,23 @@ private:
 public:
 	
 	Terrain();
-	Terrain(ID3D11Device* device, std::wstring filename);
 	~Terrain();
 	void Update();
+	void Smooth();
+
+	void LoadHeightmap();
+	void BuildQuadPatchVB(ID3D11Device* device); // vertex buffer
+	void BuildQuadPatchIB(ID3D11Device* device); // index buffer
+												 //void BuildHeightmapSRV(ID3D11Device* device); // Shader resource View
 
 	std::vector<float> heightMap;
 
 	ID3D11Buffer* mQuadPatchVB;
 	ID3D11Buffer* mQuadPatchIB;
-	ID3D11ShaderResourceView* heightmapSRV;
+	//ID3D11ShaderResourceView* heightmapSRV;
+	ID3D11ShaderResourceView* terrainResource;
+	ID3D11ShaderResourceView* grassResource;
+	ID3D11Texture2D* texture;
 
 	float getWidth()const;
 	float getDepth()const;
