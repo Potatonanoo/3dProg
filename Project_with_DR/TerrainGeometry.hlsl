@@ -28,13 +28,16 @@ void GS_main(triangle GS_IN input[3], inout TriangleStream< GS_OUT > output) {
 	// Calculate the normal to determine the direction for the new triangle to be created 
 	// (closer to the camera)
 
+	//output.Pos = input.Pos;
+	output.Pos.y = heightMap.SampleLevel(heightMapSampler, input.Tex, 0).r;
+
 	for (uint i = 0; i < 3; i++)
 	{
 		// the input position must be multiplied with the World matrix for the World position to Pixelshader
 		element.PosW = mul(float4(input[i].Pos.xyz, 1.0f), WorldMatrix);
 		// the input position must be multiplied with the WorldViewProj matrix for the WorldViewProj
 		element.Pos = mul(float4(input[i].Pos.xyz, 1.0f), mul(WorldMatrix, ViewMatrix));
-		element.lPos = mul(float4(input[i].Pos.xyz, 1.0f), mul(WorldMatrix, LightProjectionMatrix));
+		//element.lPos = mul(float4(input[i].Pos.xyz, 1.0f), mul(WorldMatrix, LightProjectionMatrix));
 
 		element.normal = mul(float4(input[i].normal, 1.0f), (float3x3)WorldMatrix);
 		element.Tex = input[i].Tex;
@@ -42,4 +45,5 @@ void GS_main(triangle GS_IN input[3], inout TriangleStream< GS_OUT > output) {
 		output.Append(element); 
 		// output is seen as list and adds the most recent vertex to the last pos
 	}
+	
 }

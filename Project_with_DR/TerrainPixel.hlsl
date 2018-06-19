@@ -19,17 +19,24 @@ struct PS_IN
 	float3 normal	: NORMAL;
 };
 
-float4 PS_main(in PS_IN input) : SV_Target
+struct PS_OUT
 {
-	
-	float3 lightPos = float3(0.f, 0.f, -5.f);
-	float3 lightRay = (lightPos - input.Pos);
-	float4 normal = normalize(float4(input.normal,1.0f));
-	float3 lightVector = lightPos.xyz - input.PosW.xyz;
-	float4 lPos = input.lPos;
+	float4 normal			: SV_Target0;
+	float4 diffuse			: SV_Target1;
+	float4 pos				: SV_Target2;
+};
 
-	float lightDepth = input.lPos.z / input.lPos.w; // pixeldepth for shadows
-	lPos.xy /= lPos.w; //light pos in NDC
+PS_OUT PS_main(in PS_IN input) : SV_Target
+{
+	//
+	//float3 lightPos = float3(0.f, 0.f, -5.f);
+	//float3 lightRay = (lightPos - input.Pos);
+	//float4 normal = normalize(float4(input.normal,1.0f));
+	//float3 lightVector = lightPos.xyz - input.PosW.xyz;
+	//float4 lPos = input.lPos;
+
+	//float lightDepth = input.lPos.z / input.lPos.w; // pixeldepth for shadows
+	//lPos.xy /= lPos.w; //light pos in NDC
 
 	// light pos in ndc
 	//float2 sMapTexture = float2(0.5f * input.lPos.x + 0.5f, -0.5f * input.lPos.y + 0.5f);
@@ -41,13 +48,18 @@ float4 PS_main(in PS_IN input) : SV_Target
 	//else {
 	//	shdw = 1.0f;
 	//}
-	
+	PS_OUT output;
+	float4 normal = float4(normalize(input.normal), 1.f);
+
 	float4 diffuse = shaderTexture.Sample(SampleType, input.Tex);
 	float3 texColor = shaderTexture.Sample(SampleType, input.Tex).xyz;
 	float4 color = float4(texColor, 1.0f);
-	//pos = input.posW;
 
-	return color*diffuse;
+	output.normal = normal;
+	output.diffuse = shaderTexture.Sample(SampleType, input.Tex);
+	output.pos = input.PosW;
+
+	return output;
 	//return float4(texColor, 1);
 
 };

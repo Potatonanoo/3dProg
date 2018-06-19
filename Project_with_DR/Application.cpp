@@ -192,6 +192,24 @@ void Application::Render()
 		g_DeviceContext->Draw(vertexCount, 0);
 	}
 
+	////** Terrain Rendering **//
+	g_DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	g_DeviceContext->IASetInputLayout(g_TerrainVertexLayout);
+
+	g_DeviceContext->VSSetShader(g_TerrainVertexShader, nullptr, 0);		// Terrain Vertex Shader 
+	g_DeviceContext->GSSetShader(g_TerrainGeometryShader, nullptr, 0);		// Terrain Geometry Shader 
+	g_DeviceContext->PSSetShader(g_TerrainPixelShader, nullptr, 0);			// Terrain Pixel Shader
+																			//g_DeviceContext->GSSetConstantBuffers(0, 1, &g_TerrainBuffer);			// Terrain Constant Buffer for the Vertex Shader
+	//g_DeviceContext->GSSetShaderResources(0, 1terrain->heightmapSRV);
+
+	UINT VertSize = sizeof(VTerr);
+	g_DeviceContext->PSSetShaderResources(0, 1, &terrain->heightmapSRV);		// Terrain shader resources
+	g_DeviceContext->IASetVertexBuffers(0, 1, &terrain->mQuadPatchVB, &VertSize, &offset);
+	g_DeviceContext->IASetIndexBuffer(terrain->mQuadPatchIB, DXGI_FORMAT_R32_UINT, 0);
+
+	g_DeviceContext->PSSetSamplers(0, 1, &g_SampleStateWrap);
+	g_DeviceContext->DrawIndexed(terrain->getIndexCounter(), 0, 0);
+
 	//** NORMAL RENDERING **//
 	g_DeviceContext->OMSetRenderTargets(1, &g_RenderTargetView, NULL);
 
@@ -221,22 +239,7 @@ void Application::Render()
 	g_SwapChain->Present(0, 0);
 
 
-	////** Terrain Rendering **//
-	g_DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	g_DeviceContext->IASetInputLayout(g_TerrainVertexLayout);
-
-	g_DeviceContext->VSSetShader(g_TerrainVertexShader, nullptr, 0);		// Terrain Vertex Shader 
-	g_DeviceContext->GSSetShader(g_TerrainGeometryShader, nullptr, 0);		// Terrain Geometry Shader 
-	g_DeviceContext->PSSetShader(g_TerrainPixelShader, nullptr, 0);			// Terrain Pixel Shader
-	g_DeviceContext->GSSetConstantBuffers(0, 1, &g_TerrainBuffer);			// Terrain Constant Buffer for the Vertex Shader
 	
-	UINT VertSize = sizeof(VTerr);
-	g_DeviceContext->PSSetShaderResources(0, 1, &terrain->heightmapSRV);		// Terrain shader resources
-	g_DeviceContext->IASetVertexBuffers(0, 1, &terrain->mQuadPatchVB, &VertSize, &offset);
-	g_DeviceContext->IASetIndexBuffer(terrain->mQuadPatchIB, DXGI_FORMAT_R32_UINT, 0);
-
-	g_DeviceContext->PSSetSamplers(0, 1, &g_SampleStateWrap);
-	g_DeviceContext->DrawIndexed(terrain->getIndexCounter(), 0, 0);
 
 
 	
@@ -517,8 +520,8 @@ bool Application::CreateTerrainShader() {
 	error = nullptr;
 
 
-	hr = D3DCompileFromFile(L"TerrainPixel.hlsl",
-		nullptr, nullptr, "PS_main", "ps_5_0", 0, 0, &p_gsBlob, &error);
+	hr = D3DCompileFromFile(L"TerrainGeometry.hlsl",
+		nullptr, nullptr, "GS_main", "gs_5_0", 0, 0, &p_gsBlob, &error);
 
 	if (FAILED(hr)) {
 		MessageBoxA(NULL, "Error creating TERRAIN shader. #4", "Error",
