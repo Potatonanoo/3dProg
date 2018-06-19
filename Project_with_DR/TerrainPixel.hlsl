@@ -5,7 +5,7 @@ Texture2D ShadowMappingTexture		: register(t2);
 SamplerState SampleType				: register(s0);
 SamplerState shadowSampler			: register(s1);
 
-cbuffer ContantBuffer : register(b0)
+cbuffer ConstantBuffer : register(b0)
 {
 	float4x4 WorldMatrix;
 };

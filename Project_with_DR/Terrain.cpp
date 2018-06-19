@@ -57,32 +57,8 @@ Terrain::~Terrain() {
 	heightmapSRV->Release();
 }
 
-void Terrain::Draw(ID3D11DeviceContext* g_DeviceContext) {
-	//** Terrain Rendering **//
-	// The vertices interpreted as parts of a triangle in the input assembler
-	g_DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	//g_DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_4_CONTROL_POINT_PATCHLIST);
-	//g_DeviceContext->IASetInputLayout(g_TerrainVertexLayout);
+void Terrain::Update() {
 
-	UINT VerSize = sizeof(VTerr);
-	UINT offset = 0;
-
-	//g_DeviceContext->VSSetShader(g_TerrainVertexShader, nullptr, 0);		// Terrain Vertex Shader 
-	//g_DeviceContext->GSSetShader(g_TerrainGeometryShader, nullptr, 0);		// Terrain Geometry Shader 
-	//g_DeviceContext->PSSetShader(g_TerrainPixelShader, nullptr, 0);			// Terrain Pixel Shader 
-	//g_DeviceContext->GSSetConstantBuffers(0, 1, &g_ConstantBuffer);			// Terrain Constant Buffer for the Vertex Shader
-	g_DeviceContext->PSSetShaderResources(0, 1, &heightmapSRV);		// Terrain shader resources
-	//g_DeviceContext->PSSetShaderResources(5, 1, &terrain->heightmapSRV);
-	//g_DeviceContext->PSSetSamplers(0, 1, &g_SampleStateWrap);
-
-	// The stride and offset must be stored in variables as we need to provide pointers to these when setting the vertex buffer
-
-	g_DeviceContext->IASetVertexBuffers(0, 1, &mQuadPatchVB, &VerSize, &offset);
-	g_DeviceContext->IASetIndexBuffer(mQuadPatchIB, DXGI_FORMAT_R16_UINT, 0);
-
-	// The input assembler recieve the vertices and the vertex layout
-
-	g_DeviceContext->DrawIndexed(indexCounter, 0, 0);
 }
 
 void Terrain::LoadHeightmap()
@@ -337,6 +313,41 @@ float Terrain::getDepth()const {
 
 unsigned int Terrain::getIndexCounter()const {
 	return this->indexCounter;
+}
+
+float Terrain::getHeight(float x, float z)const
+{
+	// transform terrain local space to "cell" space
+	float c = (x + 0.5f*getWidth()) / terrain_info.quadSize;
+	float d = (z - 0.5f*getDepth()) / -terrain_info.quadSize;
+
+	// What row and column the coords are in
+	int row = (int)floorf(d);
+	int col = (int)floorf(c);
+
+	// fetches the heights of the cell
+	float A = heightMap[row*terrain_info.hMapWidth + col];
+	float B = heightMap[row*terrain_info.hMapWidth + col + 1];
+	float C = heightMap[(row + 1)*terrain_info.hMapWidth + col];
+	float D = heightMap[(row + 1)*terrain_info.hMapWidth + col + 1];
+
+	// camera relative to the cell
+	float s = c - (float)col;
+	float t = d - (float)row;
+
+	// upper triangle
+	if (s + t <= 1.0f)
+	{
+		float uy = B - A;
+		float vy = C - A;
+		return A + s * uy + t * vy;
+	}
+	else // lower triangle
+	{
+		float uy = C - D;
+		float vy = B - D;
+		return D + (1.0f - s)*uy + (1.0f - t)*vy;
+	}
 }
 
 DirectX::XMMATRIX Terrain::getWorld()const {

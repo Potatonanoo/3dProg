@@ -66,7 +66,7 @@ private:
 	ID3D11PixelShader* g_PixelShader;
 
 	// Terraing Rendering
-	//ID3D11Buffer* g_TerrainBuffer;
+	ID3D11Buffer* g_TerrainBuffer;
 
 	ID3D11InputLayout* g_TerrainVertexLayout;
 	ID3D11VertexShader* g_TerrainVertexShader;

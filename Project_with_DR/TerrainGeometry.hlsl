@@ -1,10 +1,10 @@
 
-cbuffer GS_CONATANT_BUFFER : register(b0) {
-	matrix world;
-	matrix view;
-	matrix proj;
-	matrix trans;
-	matrix lightViewProj;
+cbuffer ConstantBuffer : register(b0) {
+	float4x4 WorldMatrix;
+	float4x4 ViewMatrix;
+	float4x4 ProjectionMatrix;
+	float4x4 LightViewMatrix;
+	float4x4 LightProjectionMatrix;
 };
 
 struct GS_IN {
@@ -31,12 +31,12 @@ void GS_main(triangle GS_IN input[3], inout TriangleStream< GS_OUT > output) {
 	for (uint i = 0; i < 3; i++)
 	{
 		// the input position must be multiplied with the World matrix for the World position to Pixelshader
-		element.PosW = mul(float4(input[i].Pos.xyz, 1.0f), world);
+		element.PosW = mul(float4(input[i].Pos.xyz, 1.0f), WorldMatrix);
 		// the input position must be multiplied with the WorldViewProj matrix for the WorldViewProj
-		element.Pos = mul(float4(input[i].Pos.xyz, 1.0f), trans);
-		element.lPos = mul(float4(input[i].Pos.xyz, 1.0f), mul(world, lightViewProj));
+		element.Pos = mul(float4(input[i].Pos.xyz, 1.0f), mul(WorldMatrix, ViewMatrix));
+		element.lPos = mul(float4(input[i].Pos.xyz, 1.0f), mul(WorldMatrix, LightProjectionMatrix));
 
-		element.normal = mul(float4(input[i].normal, 1.0f), (float3x3)world);
+		element.normal = mul(float4(input[i].normal, 1.0f), (float3x3)WorldMatrix);
 		element.Tex = input[i].Tex;
 
 		output.Append(element); 

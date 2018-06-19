@@ -67,7 +67,7 @@ public:
 	Terrain();
 	Terrain(ID3D11Device* device, std::wstring filename);
 	~Terrain();
-	void Draw(ID3D11DeviceContext* g_DeviceContext);
+	void Update();
 
 	std::vector<float> heightMap;
 
@@ -84,7 +84,7 @@ public:
 	//ID3D11ShaderResourceView* getShaderResourceView();
 	//ID3D11SamplerState* getSamplerState();
 
-	//float getHeight(float x, float z)const;
+	float getHeight(float x, float z)const;
 	//void setWorld(DirectX::CXMMATRIX M);
 	DirectX::XMMATRIX getWorld()const;
 	void translate(float x, float y, float z);

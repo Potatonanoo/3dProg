@@ -79,7 +79,7 @@ bool Application::Initialize()
 	obj[4]->translate(-1.f, -1.f, 2.f);
 
 	obj[5] = new Object(g_Device, "notcube", L"brick.dds");
-	obj[5]->translate(0.f, 0.f, 8.f);
+	obj[5]->translate(1.f, -1.f, 8.f);
 
 	camera = new Camera({ 0.f, 0.f, -5.f, 1.f }, { 0.f, 0.f, 1.f, 1.f }, { 0.f, 1.f, 0.f, 1.f });
 	
@@ -102,6 +102,11 @@ bool Application::Initialize()
 bool Application::Update(float dt)
 {
 	camera->update(dt);
+	//if (!(camera->getViewMatrix.getPosition < 
+	//terrain->getHeight(camera->getViewMatrix.getPosition.x, 
+	//	camera->getViewMatrix.getPosition.z)))
+	//	camera->setPosition(camera->getViewMatrix.getPosition * XMFLOAT4(1, -1, 1, 1));
+
 	return true;
 }
 
@@ -219,11 +224,11 @@ void Application::Render()
 	////** Terrain Rendering **//
 	g_DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	g_DeviceContext->IASetInputLayout(g_TerrainVertexLayout);
-	
+
 	g_DeviceContext->VSSetShader(g_TerrainVertexShader, nullptr, 0);		// Terrain Vertex Shader 
 	g_DeviceContext->GSSetShader(g_TerrainGeometryShader, nullptr, 0);		// Terrain Geometry Shader 
 	g_DeviceContext->PSSetShader(g_TerrainPixelShader, nullptr, 0);			// Terrain Pixel Shader
-	//g_DeviceContext->GSSetConstantBuffers(0, 1, &g_ConstantBuffer);			// Terrain Constant Buffer for the Vertex Shader
+	g_DeviceContext->GSSetConstantBuffers(0, 1, &g_TerrainBuffer);			// Terrain Constant Buffer for the Vertex Shader
 	
 	UINT VertSize = sizeof(VTerr);
 	g_DeviceContext->PSSetShaderResources(0, 1, &terrain->heightmapSRV);		// Terrain shader resources
@@ -232,6 +237,9 @@ void Application::Render()
 
 	g_DeviceContext->PSSetSamplers(0, 1, &g_SampleStateWrap);
 	g_DeviceContext->DrawIndexed(terrain->getIndexCounter(), 0, 0);
+
+
+	
 
 	//// The stride and offset must be stored in variables as we need to provide pointers to these when setting the vertex buffer
 

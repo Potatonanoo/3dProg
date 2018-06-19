@@ -9,7 +9,7 @@ Camera::Camera(XMFLOAT4 position, XMFLOAT4 forward, XMFLOAT4 up)
 	this->up = up;
 	rotationX = 0;
 	rotationY = 0;
-	speed = 25.f;
+	speed = 250.f;
 	sens = 0.001f;
 	mouseX = 640.f;
 	mouseY = 360.f;
