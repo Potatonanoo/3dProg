@@ -45,6 +45,7 @@ private:
 	int NumbPatchVertices;
 	int NumbPatchQuadFaces;
 
+
 	initInfo terrain_info;
 	//DirectX::XMFLOAT4X4 world;
 	//std::vector<DirectX::XMFLOAT2>PatchBoundsY;
