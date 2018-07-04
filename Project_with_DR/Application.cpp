@@ -81,16 +81,17 @@ bool Application::Initialize()
 	obj[5] = new Object(g_Device, "notcube", L"brick.dds");
 	obj[5]->translate(1.f, -1.f, 8.f);
 
+	terrain = new Terrain(g_Device);
+
 	camera = new Camera({ 0.f, 0.f, -5.f, 1.f }, { 0.f, 0.f, 1.f, 1.f }, { 0.f, 1.f, 0.f, 1.f });
 	
 	//terrain = new Terrain(g_Device, L"Textures\\terrain_test.raw");
 	//terrain = Terrain(L"Textures\\HMap.raw");
-	CreateDDSTextureFromFile(g_Device, NULL, L"Textures\\terrain.png", NULL, &terrain.grassResource);
-
-	terrain.LoadHeightmap();
+	//CreateDDSTextureFromFile(g_Device, NULL, L"Textures\\terrain.png", NULL, &terrain.grassResource);
+	//terrain.LoadHeightmap();
 	//Smooth();
-	terrain.BuildQuadPatchVB(g_Device); // vertex buffer
-	terrain.BuildQuadPatchIB(g_Device); // index buffer
+	//terrain.BuildQuadPatchVB(g_Device); // vertex buffer
+	//terrain.BuildQuadPatchIB(g_Device); // index buffer
 	//terrain->translate(0.f, -3.5f, 0.f);
 
 	result = CreateDepthBuffer();
@@ -200,25 +201,28 @@ void Application::Render()
 	}
 
 	////** Terrain Rendering **//
-	g_DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	g_DeviceContext->IASetInputLayout(g_TerrainVertexLayout);
+
+	ObjData.WorldMatrix = terrain->getWorld();
+	ObjData.ViewMatrix = camera->getViewMatrix();
 
 	g_DeviceContext->VSSetShader(g_TerrainVertexShader, nullptr, 0);		// Terrain Vertex Shader 
 	g_DeviceContext->GSSetShader(g_TerrainGeometryShader, nullptr, 0);		// Terrain Geometry Shader 
 	g_DeviceContext->PSSetShader(g_TerrainPixelShader, nullptr, 0);			// Terrain Pixel Shader
-	//g_DeviceContext->GSSetConstantBuffers(0, 1, &g_TerrainBuffer);		// Terrain Constant Buffer for the Vertex Shader
 
-	UINT VertSize = sizeof(VTerr);
+	terrain->setVertexBuffer(g_DeviceContext);
+	terrain->setResourceView(g_DeviceContext);
+	g_DeviceContext->GSSetSamplers(0, 1, &g_SampleStateClamp);
+
+	//g_DeviceContext->IASetVertexBuffers(0, 1, &terrain->getVertexBuffer(), )
+
 	//g_DeviceContext->PSSetShaderResources(0, 1, &terrain->heightmapSRV);	// Terrain shader resources
 	//g_DeviceContext->GSSetShaderResources(0, 2, &terrain->terrainResource);	// Terrain shader resources
-	g_DeviceContext->GSSetConstantBuffers(0, 1, &g_ConstantBuffer);
-	g_DeviceContext->PSSetShaderResources(0, 2, &terrain.terrainResource);
-	
-	g_DeviceContext->IASetVertexBuffers(0, 1, &terrain.mQuadPatchVB, &VertSize, &offset);
-	g_DeviceContext->IASetIndexBuffer(terrain.mQuadPatchIB, DXGI_FORMAT_R32_UINT, 0);
+	//g_DeviceContext->GSSetConstantBuffers(0, 1, &g_ConstantBuffer);
+	//g_DeviceContext->PSSetShaderResources(0, 2, &terrain.terrainResource);
+	//g_DeviceContext->IASetVertexBuffers(0, 1, &terrain.mQuadPatchVB, &VertSize, &offset);
+	//g_DeviceContext->IASetIndexBuffer(terrain.mQuadPatchIB, DXGI_FORMAT_R32_UINT, 0);
 
-	g_DeviceContext->PSSetSamplers(0, 1, &g_SampleStateWrap);
-	g_DeviceContext->DrawIndexed(terrain.getIndexCounter(), 0, 0);
+	g_DeviceContext->Draw(6, 0);
 
 	//** NORMAL RENDERING **//
 	g_DeviceContext->OMSetRenderTargets(1, &g_RenderTargetView, NULL);

@@ -1,25 +1,20 @@
-Texture2D shaderTexture			: register(t0);
-SamplerState SampleType			: register(s0);
+//Texture2D shaderTexture			: register(t0);
+//SamplerState SampleType			: register(s0);
 
-cbuffer ConstantBuffer : register(b0)
-{
-	float4x4 WorldMatrix;
-};
 
 struct PS_IN
 {
 	float4 Pos		: SV_POSITION;
 	float4 PosW		: POSITION;
-	float3 ViewPos	: POSITION1;
+	//float3 ViewPos	: POSITION1;
 	float2 Tex		: TEXCOORD0;
-	float4 lPos		: TEXCOORD1;
 	float3 normal	: NORMAL;
 };
 
 struct PS_OUT
 {
 	float4 normal			: SV_Target0;
-	float4 diffuse			: SV_Target1;
+	//float4 diffuse			: SV_Target1;
 	float4 Pos				: SV_Target2;
 };
 
@@ -32,7 +27,7 @@ PS_OUT PS_main(in PS_IN input)
 	//texColor = shaderTexture.Sample(SampleType, input.Tex).xyz;
 
 	output.normal = normal;
-	output.diffuse = shaderTexture.Sample(SampleType, input.Tex);
+	//output.diffuse = shaderTexture.Sample(SampleType, input.Tex);
 	output.Pos = input.PosW;
 	//output.lightViewPos = input.lightViewPos;
 

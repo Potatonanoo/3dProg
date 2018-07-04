@@ -1,12 +1,15 @@
 #pragma once
 #include <d3d11.h>
-//#include <d3dcompiler.h>
+#include <d3dcompiler.h>
+#include <d3d9types.h>
 #include <DirectXMath.h>
 #include <vector>
 #include <fstream>
 #include <DirectXPackedVector.h>
 #include <algorithm>
 #include <iostream>
+
+using namespace DirectX;
 
 struct VTerr
 {
@@ -36,6 +39,14 @@ public:
 	};
 
 private:
+
+		struct VertexData
+		{
+			float x, y, z;
+			float u, v;
+			float nx, ny, nz;
+		};
+
 	bool inBounds(int i, int j);
 	float Average(int i, int j);
 
@@ -56,27 +67,37 @@ private:
 	
 	//ID3D11ShaderResourceView* mBlendMapSRV;
 	//ID3D11ShaderResourceView* mLayerMapArraySRV;
-	DirectX::XMMATRIX WorldMatrix;
+	XMMATRIX WorldMatrix;
 public:
 	
-	Terrain();
+	Terrain(ID3D11Device* g_Device);
 	~Terrain();
 	void Update();
 	void Smooth();
 
-	void LoadHeightmap();
+	void LoadHeightmap(ID3D11Device* g_Device);
 	void BuildQuadPatchVB(ID3D11Device* device); // vertex buffer
 	void BuildQuadPatchIB(ID3D11Device* device); // index buffer
-												 //void BuildHeightmapSRV(ID3D11Device* device); // Shader resource View
+	void BuildHeightmapSRV(ID3D11Device* device); // Shader resource View
 
 	std::vector<float> heightMap;
 
 	ID3D11Buffer* mQuadPatchVB;
 	ID3D11Buffer* mQuadPatchIB;
 	//ID3D11ShaderResourceView* heightmapSRV;
-	ID3D11ShaderResourceView* terrainResource;
-	ID3D11ShaderResourceView* grassResource;
-	ID3D11Texture2D* texture;
+	//ID3D11ShaderResourceView* terrainResource;
+	//ID3D11ShaderResourceView* grassResource;
+
+		ID3D11ShaderResourceView* SRV;
+		ID3D11Texture2D* texture;
+		ID3D11Buffer* vertexBuffer;
+
+		ID3D11Buffer* getVertexBuffer();
+		ID3D11ShaderResourceView* getShaderResourceView();
+
+		void setVertexBuffer(ID3D11DeviceContext* g_DeviceContext);
+		void setResourceView(ID3D11DeviceContext* g_DeviceContext);
+
 
 	float getWidth()const;
 	float getDepth()const;

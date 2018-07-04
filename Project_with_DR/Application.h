@@ -50,7 +50,7 @@ private:
 private:
 	Object** obj;
 	Camera* camera;
-	Terrain terrain;
+	Terrain* terrain;
 
 	IDXGISwapChain*	g_SwapChain;
 	ID3D11Device* g_Device;
@@ -96,6 +96,12 @@ private:
 	ID3D11Texture2D*			g_SM_RTTexture;
 	ID3D11RenderTargetView*		g_SM_RTV;
 	ID3D11ShaderResourceView*	g_SM_SRV;
+
+	// Height Mapping
+	ID3D11Texture2D*			g_HM_RTTexture;
+	ID3D11RenderTargetView*		g_HM_RTV;
+	ID3D11ShaderResourceView*	g_HM_SRV;
+
 
 	ID3D11DepthStencilView*		g_SM_DSV;
 	ID3D11Texture2D*			g_SM_DSTexture;
