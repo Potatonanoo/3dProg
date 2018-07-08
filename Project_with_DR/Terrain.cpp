@@ -7,8 +7,9 @@ Terrain::Terrain(ID3D11Device* g_Device) {
 	//mQuadPatchVB = nullptr;
 	//mQuadPatchIB = nullptr;
 	//indexCounter = 0;
-	
 	//MessageBoxA(NULL, "Missing filename for Heightmap", "Error", MB_OK | MB_ICONEXCLAMATION);
+
+	vertexBuffer = nullptr;
 
 	terrain_info.HeightMapFilename = L"Textures\\HMap.raw";
 	terrain_info.hMapHeight = 464;
@@ -373,8 +374,8 @@ ID3D11ShaderResourceView* Terrain::getShaderResourceView()
 // Access reading error!
 void Terrain::setVertexBuffer(ID3D11DeviceContext* g_DeviceContext)
 {
-	UINT size = sizeof(float) * 8; // x,y,z  x,y  nx,ny,nz
-	UINT offset = 0;
+	UINT32 size = sizeof(VertexData);// *8; // x,y,z  x,y  nx,ny,nz
+	UINT32 offset = 0;
 	g_DeviceContext->IASetVertexBuffers(0, 1, &vertexBuffer, &size, &offset);
 }
 

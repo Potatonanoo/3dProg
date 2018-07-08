@@ -209,8 +209,8 @@ void Application::Render()
 	g_DeviceContext->GSSetShader(g_TerrainGeometryShader, nullptr, 0);		// Terrain Geometry Shader 
 	g_DeviceContext->PSSetShader(g_TerrainPixelShader, nullptr, 0);			// Terrain Pixel Shader
 
-	terrain->setVertexBuffer(g_DeviceContext);
 	terrain->setResourceView(g_DeviceContext);
+	terrain->setVertexBuffer(g_DeviceContext);
 	g_DeviceContext->GSSetSamplers(0, 1, &g_SampleStateClamp);
 
 	//g_DeviceContext->IASetVertexBuffers(0, 1, &terrain->getVertexBuffer(), )
