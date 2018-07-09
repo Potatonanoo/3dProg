@@ -25,7 +25,7 @@ Application::Application(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lp
 	// Input matrix data
 	ObjData.WorldMatrix = XMMatrixIdentity();
 	ObjData.ProjectionMatrix = XMMatrixPerspectiveFovLH(XM_PI*0.45f, (float)width / (float)height, 0.1f, 100.f);
-	ObjData.LightViewMatrix = XMMatrixLookAtLH({ 0.f, 0.f, -5.f }, { 0.f, 0.f, 1.f }, { 0.f, 1.f, 0.f });
+	ObjData.LightViewMatrix = XMMatrixLookAtLH({ 0.f, 1.f, -5.f }, { 0.f, 0.f, 1.f }, { 0.f, 1.f, 0.f });
 	ObjData.LightProjectionMatrix = XMMatrixPerspectiveFovLH(XM_PI*0.45f, 500.f / 500.f, 0.1f, 50.f);
 
 	g_hInstance = hInstance;
@@ -165,6 +165,23 @@ void Application::Render()
 		g_DeviceContext->Draw(vertexCount, 0);
 	}
 
+	ObjData.WorldMatrix = terrain->getWorld();
+
+	D3D11_MAPPED_SUBRESOURCE dataPtr;
+	g_DeviceContext->Map(g_ConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &dataPtr);
+	memcpy(dataPtr.pData, &ObjData, sizeof(ConstantBuffer));
+	g_DeviceContext->Unmap(g_ConstantBuffer, 0);
+	g_DeviceContext->VSSetConstantBuffers(0, 1, &g_ConstantBuffer);
+
+	terrain->setVertexBuffer(g_DeviceContext);
+	terrain->setResourceView(g_DeviceContext);
+
+	g_DeviceContext->VSSetSamplers(0, 1, &g_SampleStateClamp);
+	terrain->setTextureSRV(g_DeviceContext);
+	terrain->setTextureSamplerState(g_DeviceContext);
+
+	g_DeviceContext->Draw(6, 0);
+
 
 	//** DEFERRED RENDERING **//
 
@@ -201,9 +218,15 @@ void Application::Render()
 	}
 
 	////** Terrain Rendering **//
+	g_DeviceContext->IASetInputLayout(g_TerrainVertexLayout);
 
 	ObjData.WorldMatrix = terrain->getWorld();
 	ObjData.ViewMatrix = camera->getViewMatrix();
+
+	g_DeviceContext->Map(g_ConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &dataPtr);
+	memcpy(dataPtr.pData, &ObjData, sizeof(ConstantBuffer));
+	g_DeviceContext->Unmap(g_ConstantBuffer, 0);
+	g_DeviceContext->GSSetConstantBuffers(0, 1, &g_ConstantBuffer);
 
 	g_DeviceContext->VSSetShader(g_TerrainVertexShader, nullptr, 0);		// Terrain Vertex Shader 
 	g_DeviceContext->GSSetShader(g_TerrainGeometryShader, nullptr, 0);		// Terrain Geometry Shader 
@@ -212,7 +235,7 @@ void Application::Render()
 	terrain->setVertexBuffer(g_DeviceContext);
 	terrain->setResourceView(g_DeviceContext);
 
-	//g_DeviceContext->GSSetSamplers(0, 1, &g_SampleStateClamp);
+	g_DeviceContext->VSSetSamplers(0, 1, &g_SampleStateClamp);
 	terrain->setTextureSRV(g_DeviceContext);
 	terrain->setTextureSamplerState(g_DeviceContext);
 

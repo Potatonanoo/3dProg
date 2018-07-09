@@ -6,9 +6,6 @@ cbuffer ConstantBuffer : register(b0) {
 	float4x4 LightProjectionMatrix;
 };
 
-Texture2D heightmap			: register(t0);
-SamplerState SampleType		: register(s0);
-
 struct GS_IN {
 	float4 Pos : POSITON;
 	float2 Tex : TEXCOORD0;
@@ -19,9 +16,9 @@ struct GS_IN {
 struct GS_OUT {
 	float4 Pos		: SV_POSITION;
 	float4 PosW		: POSITION;
-	//float3 ViewPos	: POSITION1;
 	float2 Tex		: TEXCOORD0;
 	float3 normal	: NORMAL;
+	float4 lightViewPos	: TEXCOORD2;
 };
 
 [maxvertexcount(6)]
@@ -32,9 +29,8 @@ void GS_main(triangle GS_IN input[3], inout TriangleStream< GS_OUT > output)
 		GS_OUT element;
 		element.Pos = input[i].Pos;
 
-		int height = heightmap.Sample(SampleType, input[i].Tex).r;
-		//element.Pos.y = height;
-		//depthValue = ShadowMappingTexture.Sample(ClampSampler, projectTexCoord).r;
+		//float height = heightmap.Sample(SampleType, input[i].Tex).r;
+		//element.Pos = float4(element.Pos.x, height, element.Pos.z, 1.f); //height;
 
 
 		element.Pos = mul(WorldMatrix, element.Pos);
@@ -42,11 +38,16 @@ void GS_main(triangle GS_IN input[3], inout TriangleStream< GS_OUT > output)
 		element.Pos = mul(ViewMatrix, element.Pos);
 		element.Pos = mul(ProjectionMatrix, element.Pos);
 
+		// Used in shadow mapping
+		element.lightViewPos = mul(WorldMatrix, input[i].Pos);
+		element.lightViewPos = mul(LightViewMatrix, element.lightViewPos);
+		element.lightViewPos = mul(LightProjectionMatrix, element.lightViewPos);
+
 		element.Tex = input[i].Tex;
 
 		element.normal = mul(WorldMatrix, input[i].normal);
 
 		output.Append(element);
 	}
-	
+	output.RestartStrip();
 }

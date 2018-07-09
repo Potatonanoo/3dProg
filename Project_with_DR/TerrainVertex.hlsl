@@ -1,4 +1,5 @@
-//Texture2D heightMap : register(t0);
+Texture2D heightmap			: register(t0);
+SamplerState SampleType		: register(s0);
 
 //SamplerState heightMapSampler {
 //	Filter = MIN_MAG_LINNEAR_MIP_POINT;
@@ -15,7 +16,7 @@ struct VS_IN {
 };
 
 struct VS_OUT {
-	float3 Pos : POSITON;
+	float4 Pos : POSITON;
 	float2 Tex : TEXCOORD0;
 	float3 normal : NORMAL;
 	//float3 BoundsY : TEXCOORD1;
@@ -25,9 +26,9 @@ VS_OUT VS_main(VS_IN input)
 {
 	VS_OUT output = (VS_OUT)0;
 
-	output.Pos = input.Pos;
+	output.Pos = float4(input.Pos, 1.f);
 
-	//output.Pos.y = heightMap.SampleLevel(heightMapSampler, input.Tex, 0).r;
+	//output.Pos.y += heightmap.SampleLevel(SampleType, input.Tex, 0).r;
 
 	output.Tex = input.Tex;
 	output.normal = input.normal;

@@ -29,7 +29,7 @@ Terrain::Terrain(ID3D11Device* g_Device) {
 	BuildHeightmapSRV(g_Device);
 	LoadHeightmap(g_Device);
 	BuildQuadPatchVB(g_Device);
-	loadTexture(g_Device, L"terrtex");
+	loadTexture(g_Device, L"brick");
 }
 
 Terrain::~Terrain() {
@@ -383,13 +383,13 @@ void Terrain::setVertexBuffer(ID3D11DeviceContext* g_DeviceContext)
 
 void Terrain::setResourceView(ID3D11DeviceContext* g_DeviceContext)
 {
-	g_DeviceContext->GSSetShaderResources(0, 1, &SRV);
+	g_DeviceContext->VSSetShaderResources(0, 1, &SRV);
 }
 
 void Terrain::loadTexture(ID3D11Device* g_Device, wchar_t* filename)
 {
 	ID3D11Resource* pTexture = nullptr;
-	DirectX::CreateDDSTextureFromFile(g_Device, filename, &pTexture, &textureSRV);
+	DirectX::CreateDDSTextureFromFile(g_Device, L"brick.dds", &pTexture, &textureSRV);
 
 	D3D11_SAMPLER_DESC sampDesc;
 	sampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
