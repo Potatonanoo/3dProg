@@ -211,18 +211,10 @@ void Application::Render()
 
 	terrain->setVertexBuffer(g_DeviceContext);
 	terrain->setResourceView(g_DeviceContext);
-	g_DeviceContext->GSSetSamplers(0, 1, &g_SampleStateClamp);
+
+	//g_DeviceContext->GSSetSamplers(0, 1, &g_SampleStateClamp);
 	terrain->setTextureSRV(g_DeviceContext);
 	terrain->setTextureSamplerState(g_DeviceContext);
-
-	//g_DeviceContext->IASetVertexBuffers(0, 1, &terrain->getVertexBuffer(), )
-
-	//g_DeviceContext->PSSetShaderResources(0, 1, &terrain->heightmapSRV);	// Terrain shader resources
-	//g_DeviceContext->GSSetShaderResources(0, 2, &terrain->terrainResource);	// Terrain shader resources
-	//g_DeviceContext->GSSetConstantBuffers(0, 1, &g_ConstantBuffer);
-	//g_DeviceContext->PSSetShaderResources(0, 2, &terrain.terrainResource);
-	//g_DeviceContext->IASetVertexBuffers(0, 1, &terrain.mQuadPatchVB, &VertSize, &offset);
-	//g_DeviceContext->IASetIndexBuffer(terrain.mQuadPatchIB, DXGI_FORMAT_R32_UINT, 0);
 
 	g_DeviceContext->Draw(6, 0);
 
@@ -254,11 +246,6 @@ void Application::Render()
 
 	g_SwapChain->Present(0, 0);
 
-
-	
-
-
-	
 
 	//// The stride and offset must be stored in variables as we need to provide pointers to these when setting the vertex buffer
 

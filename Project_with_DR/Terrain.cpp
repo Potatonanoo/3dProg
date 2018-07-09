@@ -143,12 +143,12 @@ void Terrain::BuildQuadPatchVB(ID3D11Device* g_Device) {
 
 	VertexData triangleVertices[6] =
 	{
-		-width, -height, 0.f,		0.f, 1.f,	0.f, 0.f, 1.f,
-		width, height, 0.f,			1.f, 0.f,	0.f, 0.f, 1.f,
-		-width, height, 0.f,		0.f, 0.f,	0.f, 0.f, 1.f,
-		-width, -height, 0.f,		0.f, 1.f,	0.f, 0.f, 1.f,
-		width, -height, 0.f,		1.f, 1.f,	0.f, 0.f, 1.f,
-		width, height, 0.f,			1.f, 0.f,	0.f, 0.f, 1.f,
+		-10.f, 0.5f, 10.f,		0.f, 0.f,	0.f, 1.f, 0.f,
+		10.f, 0.5f, 10.f,		1.f, 0.f,	0.f, 1.f, 0.f,
+		-10.f, 0.5f, -10.f,		0.f, 1.f,	0.f, 1.f, 0.f,
+		10.f, 0.5f, 10.f,		1.f, 0.f,	0.f, 1.f, 0.f,
+		10.f, 0.5f, -10.f,		1.f, 1.f,	0.f, 1.f, 0.f,
+		-10.f, 0.5f, -10.f,		0.f, 1.f,	0.f, 1.f, 0.f,
 	};
 	
 	int vertexCount = 6;

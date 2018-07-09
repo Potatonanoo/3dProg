@@ -1,5 +1,4 @@
-
-Texture2D heightMap : register(t0);
+//Texture2D heightMap : register(t0);
 
 //SamplerState heightMapSampler {
 //	Filter = MIN_MAG_LINNEAR_MIP_POINT;
