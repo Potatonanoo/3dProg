@@ -79,7 +79,7 @@ public:
 	void BuildQuadPatchVB(ID3D11Device* device); // vertex buffer
 	void BuildQuadPatchIB(ID3D11Device* device); // index buffer
 	void BuildHeightmapSRV(ID3D11Device* device); // Shader resource View
-
+	void loadTexture(ID3D11Device* g_Device, wchar_t* filename);
 	std::vector<float> heightMap;
 
 	ID3D11Buffer* mQuadPatchVB;
@@ -88,6 +88,8 @@ public:
 	//ID3D11ShaderResourceView* terrainResource;
 	//ID3D11ShaderResourceView* grassResource;
 
+	ID3D11ShaderResourceView* textureSRV;
+	ID3D11SamplerState* textureSamplerState;
 		ID3D11ShaderResourceView* SRV;
 		ID3D11Texture2D* texture;
 		ID3D11Buffer* vertexBuffer;
@@ -98,6 +100,8 @@ public:
 		void setVertexBuffer(ID3D11DeviceContext* g_DeviceContext);
 		void setResourceView(ID3D11DeviceContext* g_DeviceContext);
 
+		void setTextureSRV(ID3D11DeviceContext* g_DeviceContext);
+		void setTextureSamplerState(ID3D11DeviceContext* g_DeviceContext);
 
 	float getWidth()const;
 	float getDepth()const;
