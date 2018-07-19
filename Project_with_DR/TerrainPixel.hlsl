@@ -28,6 +28,9 @@ PS_OUT PS_main(in PS_IN input)
 	output.normal = normal;
 	output.diffuse = shaderTexture.Sample(SampleType, input.Tex);
 	output.Pos = input.PosW;
+	float height = shaderTexture.Sample(SampleType, input.Tex).r;
+	output.Pos.y += 10;
+	//height * 500;
 	output.lightViewPos = input.lightViewPos;
 
 	return output;

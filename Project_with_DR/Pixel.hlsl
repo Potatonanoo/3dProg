@@ -45,7 +45,7 @@ float4 PS_main( in PS_IN input) : SV_Target
 
 		if (lightDepthValue < depthValue)
 		{
-			float3 lightPos = float3(0.f, 0.f, -5.f);
+			float3 lightPos = float3(0.f, 3.f, -5.f);
 			float3 lightRay = lightPos - position;
 
 			float lightIntensity;

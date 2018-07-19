@@ -46,7 +46,7 @@ void Terrain::Update() {
 void Terrain::LoadHeightmap(ID3D11Device* g_Device)
 {
 	ID3D11Resource* pTexture = nullptr;
-	DirectX::CreateDDSTextureFromFile(g_Device, L"dds", &pTexture, &SRV);
+	DirectX::CreateDDSTextureFromFile(g_Device, L"Textures\\terrtex_hmap.dds", &pTexture, &SRV);
 
 	//// Takes in a height per vertex
 	//std::vector<unsigned char> in(terrain_info.hMapWidth * terrain_info.hMapHeight);
@@ -413,4 +413,5 @@ void Terrain::setTextureSRV(ID3D11DeviceContext* g_DeviceContext)
 void Terrain::setTextureSamplerState(ID3D11DeviceContext* g_DeviceContext)
 {
 	g_DeviceContext->PSSetSamplers(0, 1, &textureSamplerState);
+	g_DeviceContext->VSSetSamplers(0, 1, &textureSamplerState);
 }

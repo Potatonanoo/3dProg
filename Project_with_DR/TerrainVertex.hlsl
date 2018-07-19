@@ -28,7 +28,12 @@ VS_OUT VS_main(VS_IN input)
 
 	output.Pos = float4(input.Pos, 1.f);
 
-	//output.Pos.y += heightmap.SampleLevel(SampleType, input.Tex, 0).r;
+	//float height = heightmap.SampleLevel(SampleType, input.Tex, 0).r;
+	///output.Pos = float4(input.Pos.x, input.Pos.y + height, input.Pos.z, 1.f);
+	/*if (height == 0.f)
+	{
+		output.Pos.y = 2.f;
+	}*/
 
 	output.Tex = input.Tex;
 	output.normal = input.normal;

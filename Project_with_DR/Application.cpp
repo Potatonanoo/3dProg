@@ -25,7 +25,7 @@ Application::Application(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lp
 	// Input matrix data
 	ObjData.WorldMatrix = XMMatrixIdentity();
 	ObjData.ProjectionMatrix = XMMatrixPerspectiveFovLH(XM_PI*0.45f, (float)width / (float)height, 0.1f, 100.f);
-	ObjData.LightViewMatrix = XMMatrixLookAtLH({ 0.f, 1.f, -5.f }, { 0.f, 0.f, 1.f }, { 0.f, 1.f, 0.f });
+	ObjData.LightViewMatrix = XMMatrixLookAtLH({ 0.f, 3.f, -5.f }, { 0.f, 0.f, 1.f }, { 0.f, 1.f, 0.f });
 	ObjData.LightProjectionMatrix = XMMatrixPerspectiveFovLH(XM_PI*0.45f, 500.f / 500.f, 0.1f, 50.f);
 
 	g_hInstance = hInstance;
@@ -60,7 +60,7 @@ bool Application::Initialize()
 
 	obj[0] = new Object(g_Device, "cube", L"brick.dds");
 	//obj[0]->rotate(-0.2f, 0.f, 0.f);
-	obj[0]->translate(-2.5f, 0.f, 0.f);
+	obj[0]->translate(-2.5f, 1.f, 0.f);
 
 	obj[1] = new Object(g_Device, "cube", L"brick.dds");
 	//obj[1]->rotate(0.f, 1.f, 0.f);
@@ -79,7 +79,7 @@ bool Application::Initialize()
 	obj[4]->translate(-1.f, -1.f, 2.f);
 
 	obj[5] = new Object(g_Device, "notcube", L"brick.dds");
-	obj[5]->translate(1.f, -1.f, 8.f);
+	obj[5]->translate(1.f, 12.f, 13.f);
 
 	terrain = new Terrain(g_Device);
 
@@ -124,7 +124,7 @@ void Application::Render()
 	UINT offset = 0;
 	UINT vertexCount = 0;
 
-	float color[4]{ 0.f, 0.f, 1.f, 1.f };
+	float color[4]{ 0.f, 1.f, 0.f, 1.f };
 	g_DeviceContext->ClearRenderTargetView(g_RenderTargetView, color);
 	g_DeviceContext->ClearRenderTargetView(g_SM_RTV, color);
 	for (int i = 0; i < 5; i++)
@@ -171,12 +171,12 @@ void Application::Render()
 	g_DeviceContext->Map(g_ConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &dataPtr);
 	memcpy(dataPtr.pData, &ObjData, sizeof(ConstantBuffer));
 	g_DeviceContext->Unmap(g_ConstantBuffer, 0);
-	g_DeviceContext->VSSetConstantBuffers(0, 1, &g_ConstantBuffer);
+	g_DeviceContext->GSSetConstantBuffers(0, 1, &g_ConstantBuffer);
 
 	terrain->setVertexBuffer(g_DeviceContext);
 	terrain->setResourceView(g_DeviceContext);
 
-	g_DeviceContext->VSSetSamplers(0, 1, &g_SampleStateClamp);
+	//g_DeviceContext->VSSetSamplers(0, 1, &g_SampleStateClamp);
 	terrain->setTextureSRV(g_DeviceContext);
 	terrain->setTextureSamplerState(g_DeviceContext);
 

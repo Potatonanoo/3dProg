@@ -21,7 +21,7 @@ struct GS_OUT {
 	float4 lightViewPos	: TEXCOORD2;
 };
 
-[maxvertexcount(6)]
+[maxvertexcount(12)]
 void GS_main(triangle GS_IN input[3], inout TriangleStream< GS_OUT > output) 
 {
 	for (uint i = 0; i < 3; i++)
